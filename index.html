@@ -853,8 +853,11 @@ class Component extends DCLogic {
     
     console.log('[componentDidMount] seteando estado con', comps.length, 'componentes');
     this.setState({comps, customBoxes:boxes, session, adminAuth, isLoading: false}, () => {
-      console.log('[componentDidMount] estado actualizado, forzando repaint');
-      this.forceUpdate();
+      console.log('[componentDidMount] estado actualizado');
+      // Forzar repaint múltiples veces para asegurar que React actualiza
+      setTimeout(() => this.forceUpdate(), 0);
+      setTimeout(() => this.forceUpdate(), 100);
+      setTimeout(() => this.forceUpdate(), 200);
     });
   }
 
