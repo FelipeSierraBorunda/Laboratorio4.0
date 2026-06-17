@@ -9,11 +9,12 @@
 <x-dc>
 <helmet>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="./mock-supabase.js"></script>
+<script src="./supabase-client.js"></script>
+<script src="./auth.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#0F172A}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes popIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:scale(1)}}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:#CBD5E1;border-radius:3px}
 </style>
@@ -47,12 +48,18 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
     </sc-for>
   </nav>
   <div style="display:flex;gap:8px;align-items:center;">
-    <label style="display:flex;align-items:center;gap:5px;padding:5px 12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:6px;cursor:pointer;font-size:12px;color:#94A3B8;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:rgba(255,255,255,0.12)!important;color:#E2E8F0!important;">
-      ↑ Importar
-      <input type="file" accept=".json" onChange="{{ onImport }}" style="display:none;" />
-    </label>
-    <button onClick="{{ onExportJSON }}" style="padding:5px 12px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:6px;cursor:pointer;font-size:12px;color:#94A3B8;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:rgba(255,255,255,0.12)!important;color:#E2E8F0!important;">↓ JSON</button>
-    <button onClick="{{ onExportCSV }}" style="padding:5px 12px;background:rgba(37,99,235,0.3);border:1px solid rgba(37,99,235,0.5);border-radius:6px;cursor:pointer;font-size:12px;color:#93C5FD;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:rgba(37,99,235,0.5)!important;">↓ CSV</button>
+    <sc-if value="{{ loggedIn }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="display:flex;align-items:center;gap:7px;padding:4px 12px 4px 5px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:20px;">
+          <div style="width:24px;height:24px;border-radius:50%;background:#2563EB;color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{ userInitial }}</div>
+          <span style="font-size:12px;color:#E2E8F0;white-space:nowrap;">{{ userName }}</span>
+        </div>
+        <button onClick="{{ onLogout }}" style="padding:5px 12px;background:transparent;border:1px solid rgba(255,255,255,0.12);border-radius:6px;cursor:pointer;font-size:12px;color:#94A3B8;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:rgba(255,255,255,0.08)!important;color:#E2E8F0!important;">Salir</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ loggedOut }}" hint-placeholder-val="{{ true }}">
+      <button onClick="{{ onOpenLogin }}" style="padding:6px 16px;background:#2563EB;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1D4ED8!important;">Iniciar sesión</button>
+    </sc-if>
   </div>
 </header>
 
@@ -61,26 +68,26 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
   <!-- ===== VISUAL ===== -->
   <sc-if value="{{ isVisual }}" hint-placeholder-val="{{ true }}">
     <div style="">
-      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+      <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:stretch;">
         <sc-for list="{{ ctTabs }}" as="tab" hint-placeholder-count="6">
           <button onClick="{{ tab.onClick }}" style="{{ tab.tabStyle }}" style-hover="border-color:#2563EB!important;color:#2563EB!important;">
             {{ tab.name }}
             <span style="{{ tab.cntStyle }}">{{ tab.cnt }}</span>
           </button>
         </sc-for>
+        <button onClick="{{ onNewBox }}" style="padding:8px 16px;border-radius:8px;border:1px dashed #94A3B8;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#475569;font-family:'IBM Plex Sans',sans-serif;display:flex;align-items:center;gap:6px;" style-hover="border-color:#2563EB!important;color:#2563EB!important;background:#EFF6FF!important;">+ Nueva caja</button>
       </div>
       <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;padding:24px;">
         <h2 style="font-size:16px;font-weight:700;color:#0F172A;margin-bottom:4px;">{{ ctName }}</h2>
-        <p style="font-size:13px;color:#64748B;margin-bottom:20px;">Haz clic en un cajón para ver su contenido · Cajones coloreados tienen componentes</p>
+        <p style="font-size:13px;color:#64748B;margin-bottom:20px;">{{ ctHint }}</p>
 
         <!-- GABINETE CSS Illustration -->
         <sc-if value="{{ isG }}" hint-placeholder-val="{{ true }}">
-          <div style="display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;">
-            <!-- Dark cabinet body -->
-            <div style="background:linear-gradient(160deg,#2D2D2D,#1C1C1C);border-radius:12px;padding:14px;box-shadow:0 8px 28px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.06);flex-shrink:0;width:440px;max-width:100%;">
+          <div style="display:flex;justify-content:center;">
+            <div style="background:linear-gradient(160deg,#2D2D2D,#1C1C1C);border-radius:12px;padding:14px;box-shadow:0 8px 28px rgba(0,0,0,0.35),inset 0 1px 0 rgba(255,255,255,0.06);width:440px;max-width:100%;">
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:0 2px;">
                 <span style="font-size:11px;font-weight:700;color:#666;letter-spacing:0.1em;text-transform:uppercase;">{{ ctName }}</span>
-                <span style="font-size:10px;color:#555;font-family:'IBM Plex Mono',monospace;">64 cajones · 8×8</span>
+                <span style="font-size:10px;color:#555;font-family:'IBM Plex Mono',monospace;">{{ ctTotalDrawers }} cajones · 8×8</span>
               </div>
               <div style="background:#161616;border-radius:6px;padding:8px;border:1px solid #333;">
                 <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;">
@@ -100,34 +107,26 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
                 </div>
               </div>
             </div>
-            <!-- Stats panel -->
-            <div style="flex:1;min-width:180px;padding-top:4px;display:flex;flex-direction:column;gap:12px;">
-              <div style="background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0;padding:16px;">
-                <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Componentes</div>
-                <div style="font-size:32px;font-weight:700;color:#0F172A;letter-spacing:-1px;">{{ ctCompCount }}</div>
-              </div>
-              <button onClick="{{ onCLView }}" style="padding:11px 16px;background:#0F172A;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;text-align:left;" style-hover="background:#1E293B!important;">Ver contenido completo →</button>
-              <div style="display:flex;flex-direction:column;gap:6px;">
-                <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:2px;background:#22C55E;flex-shrink:0;"></div><span style="font-size:12px;color:#64748B;">Bajo — cajón con espacio</span></div>
-                <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:2px;background:#F59E0B;flex-shrink:0;"></div><span style="font-size:12px;color:#64748B;">Medio — cajón semi-lleno</span></div>
-                <div style="display:flex;align-items:center;gap:8px;"><div style="width:10px;height:10px;border-radius:2px;background:#EF4444;flex-shrink:0;"></div><span style="font-size:12px;color:#64748B;">Alto — cajón lleno</span></div>
-              </div>
-            </div>
           </div>
         </sc-if>
 
         <!-- CAJA 12 compartimentos -->
         <sc-if value="{{ isC12 }}" hint-placeholder-val="{{ false }}">
-          <div style="display:grid;grid-template-columns:auto 1fr;gap:28px;align-items:start;">
-            <img src="uploads/pasted-1781656607500-0.png" style="height:280px;width:auto;border-radius:8px;border:1px solid #E2E8F0;object-fit:contain;max-width:260px;" />
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:28px;align-items:start;">
+            <sc-if value="{{ ctImage }}" hint-placeholder-val="{{ false }}">
+              <img style="width:100%;aspect-ratio:1/1.05;border-radius:8px;border:1px solid #E2E8F0;object-fit:cover;background:#F8FAFC;" alt="imagen contenedor" />
+            </sc-if>
             <div>
               <p style="font-size:13px;color:#64748B;margin-bottom:16px;">Haz clic en un compartimento para ver su contenido:</p>
-              <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;max-width:420px;">
+              <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;">
                 <sc-for list="{{ dCells }}" as="cell" hint-placeholder-count="12">
-                  <div onClick="{{ cell.onClick }}" title="{{ cell.title }}" style="aspect-ratio:1;cursor:pointer;border-radius:8px;background:{{ cell.bg }};border:2px solid {{ cell.borderColor }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;" style-hover="border-color:#2563EB!important;background:#EFF6FF!important;">
+                  <div onClick="{{ cell.onClick }}" title="{{ cell.title }}" style="aspect-ratio:1;cursor:pointer;border-radius:8px;background:{{ cell.bg }};border:2px solid {{ cell.borderColor }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:52px;position:relative;overflow:hidden;" style-hover="border-color:#2563EB!important;">
                     <span style="font-size:12px;font-weight:600;color:#475569;pointer-events:none;">{{ cell.num }}</span>
                     <sc-if value="{{ cell.hasItems }}" hint-placeholder-val="{{ false }}">
                       <span style="font-size:9px;color:#2563EB;background:#DBEAFE;border-radius:3px;padding:0 4px;pointer-events:none;line-height:1.5;">{{ cell.itemCount }}</span>
+                    </sc-if>
+                    <sc-if value="{{ cell.hasItems }}" hint-placeholder-val="{{ false }}">
+                      <div style="position:absolute;bottom:0;left:0;right:0;height:3px;background:{{ cell.fillColor }};pointer-events:none;"></div>
                     </sc-if>
                   </div>
                 </sc-for>
@@ -138,19 +137,67 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
 
         <!-- CAJA LIBRE (sin compartimentos) -->
         <sc-if value="{{ isCL }}" hint-placeholder-val="{{ false }}">
-          <div style="display:flex;gap:32px;align-items:flex-start;flex-wrap:wrap;">
-            <sc-if value="{{ isC3 }}" hint-placeholder-val="{{ false }}"><img src="uploads/pasted-1781656614618-0.png" style="height:240px;width:auto;border-radius:8px;border:1px solid #E2E8F0;object-fit:contain;max-width:260px;" /></sc-if>
-            <sc-if value="{{ isC4 }}" hint-placeholder-val="{{ false }}"><img src="uploads/pasted-1781656620422-0.png" style="height:240px;width:auto;border-radius:8px;border:1px solid #E2E8F0;object-fit:contain;max-width:260px;" /></sc-if>
-            <div style="display:flex;flex-direction:column;gap:16px;padding-top:12px;">
-              <p style="font-size:14px;color:#64748B;max-width:340px;line-height:1.7;">Caja sin compartimentos. Todos los componentes están en el interior sin división interna.</p>
-              <div style="display:flex;align-items:baseline;gap:10px;">
-                <span style="font-size:36px;font-weight:700;color:#0F172A;letter-spacing:-1px;">{{ clCount }}</span>
-                <span style="font-size:14px;color:#64748B;">{{ clText }}</span>
-              </div>
-              <button onClick="{{ onCLView }}" style="padding:11px 22px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;width:fit-content;" style-hover="background:#1D4ED8!important;">Ver contenido completo →</button>
+          <div style="display:grid;grid-template-columns:1fr 2fr;gap:32px;align-items:start;">
+            <sc-if value="{{ ctImage }}" hint-placeholder-val="{{ false }}">
+              <img style="width:100%;aspect-ratio:1/0.92;border-radius:8px;border:1px solid #E2E8F0;object-fit:cover;background:#F8FAFC;" alt="imagen contenedor" />
+            </sc-if>
+            <div style="display:flex;flex-direction:column;gap:12px;padding-top:8px;">
+              <p style="font-size:14px;color:#64748B;line-height:1.7;">Caja sin compartimentos. Todos los componentes están en el interior sin división interna. Consulta las estadísticas abajo.</p>
             </div>
           </div>
         </sc-if>
+
+        <!-- ===== ESTADÍSTICAS DEL CONTENEDOR (todas las cajas) ===== -->
+        <div style="margin-top:24px;border-top:1px solid #F1F5F9;padding-top:22px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;">
+            <div style="background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0;padding:16px;">
+              <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">{{ ctPctLabel }}</div>
+              <div style="font-size:30px;font-weight:700;color:#0F172A;letter-spacing:-1px;">{{ ctPct }}%</div>
+              <div style="height:8px;background:#EEF2F7;border-radius:4px;overflow:hidden;margin-top:10px;"><div style="height:100%;width:{{ ctPct }}%;background:#2563EB;border-radius:4px;transition:width .3s ease;"></div></div>
+              <div style="font-size:11px;color:#94A3B8;margin-top:6px;">{{ ctPctSub }}</div>
+            </div>
+            <div style="background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0;padding:16px;">
+              <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Componentes guardados</div>
+              <div style="font-size:30px;font-weight:700;color:#0F172A;letter-spacing:-1px;">{{ ctCompCount }}</div>
+              <div style="font-size:11px;color:#94A3B8;margin-top:6px;">tipos distintos aquí</div>
+            </div>
+            <div style="background:#F8FAFC;border-radius:10px;border:1px solid #E2E8F0;padding:16px;">
+              <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px;">Unidades</div>
+              <div style="font-size:30px;font-weight:700;color:#0F172A;letter-spacing:-1px;">{{ ctUnits }}</div>
+              <div style="font-size:11px;color:#94A3B8;margin-top:6px;">piezas en total</div>
+            </div>
+          </div>
+          <button onClick="{{ onCLView }}" style="margin-top:14px;padding:10px 18px;background:#0F172A;color:white;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1E293B!important;">Ver contenido completo →</button>
+
+          <sc-if value="{{ showColorLegend }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:24px;">
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Color del recuadro = tipo de componente</div>
+                <sc-if value="{{ hasLegendTypes }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                    <sc-for list="{{ legendTypes }}" as="lt" hint-placeholder-count="4">
+                      <div style="display:flex;align-items:center;gap:6px;padding:3px 10px 3px 6px;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:20px;">
+                        <div style="width:13px;height:13px;border-radius:3px;background:{{ lt.col }};flex-shrink:0;"></div>
+                        <span style="font-size:12px;color:#475569;">{{ lt.t }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-if>
+                <sc-if value="{{ noLegendTypes }}" hint-placeholder-val="{{ false }}">
+                  <p style="font-size:12px;color:#94A3B8;">Aún no hay componentes en este contenedor.</p>
+                </sc-if>
+              </div>
+              <div>
+                <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:10px;">Barra inferior = qué tan lleno está el cajón</div>
+                <div style="display:flex;flex-direction:column;gap:7px;">
+                  <div style="display:flex;align-items:center;gap:9px;"><div style="width:24px;height:4px;border-radius:2px;background:#22C55E;flex-shrink:0;"></div><span style="font-size:12px;color:#64748B;">Bajo — cajón con espacio libre</span></div>
+                  <div style="display:flex;align-items:center;gap:9px;"><div style="width:24px;height:4px;border-radius:2px;background:#F59E0B;flex-shrink:0;"></div><span style="font-size:12px;color:#64748B;">Medio — cajón a media capacidad</span></div>
+                  <div style="display:flex;align-items:center;gap:9px;"><div style="width:24px;height:4px;border-radius:2px;background:#EF4444;flex-shrink:0;"></div><span style="font-size:12px;color:#64748B;">Alto — cajón lleno</span></div>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
       </div>
     </div>
   </sc-if>
@@ -175,11 +222,12 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
       </div>
       <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;overflow:hidden;">
         <div style="overflow-x:auto;">
-          <table style="width:100%;border-collapse:collapse;min-width:900px;">
+          <table style="width:100%;border-collapse:collapse;min-width:920px;">
             <thead>
               <tr style="background:#F8FAFC;border-bottom:2px solid #E2E8F0;">
                 <th onClick="{{ onSCode }}" style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;cursor:pointer;white-space:nowrap;user-select:none;letter-spacing:0.04em;" style-hover="color:#0F172A!important;">{{ sCodeHdr }}</th>
                 <th onClick="{{ onSTipo }}" style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;cursor:pointer;user-select:none;letter-spacing:0.04em;" style-hover="color:#0F172A!important;">{{ sTipoHdr }}</th>
+                <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;letter-spacing:0.04em;">VALOR</th>
                 <th style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;letter-spacing:0.04em;">Nº FABRICANTE</th>
                 <th onClick="{{ onSDesc }}" style="padding:11px 14px;text-align:left;font-size:11px;font-weight:700;color:#475569;cursor:pointer;user-select:none;letter-spacing:0.04em;" style-hover="color:#0F172A!important;">{{ sDescHdr }}</th>
                 <th onClick="{{ onSQty }}" style="padding:11px 14px;text-align:right;font-size:11px;font-weight:700;color:#475569;cursor:pointer;user-select:none;letter-spacing:0.04em;" style-hover="color:#0F172A!important;">{{ sQtyHdr }}</th>
@@ -195,12 +243,14 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
                   <td style="padding:10px 14px;">
                     <span style="font-size:11px;font-weight:600;color:{{ row.col }};background:{{ row.tipoBg }};padding:3px 8px;border-radius:10px;white-space:nowrap;">{{ row.tipo }}</span>
                   </td>
+                  <td style="padding:10px 14px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#0F172A;font-weight:600;white-space:nowrap;">{{ row.valor }}</td>
                   <td style="padding:10px 14px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#0F172A;white-space:nowrap;">{{ row.codigoFabricante }}</td>
                   <td style="padding:10px 14px;font-size:13px;color:#0F172A;max-width:260px;">{{ row.descripcion }}</td>
                   <td style="padding:10px 14px;font-size:13px;text-align:right;font-weight:600;color:#0F172A;">{{ row.cantidad }}</td>
                   <td style="padding:10px 14px;font-size:11px;font-family:'IBM Plex Mono',monospace;color:#64748B;white-space:nowrap;">{{ row.ubic }}</td>
                   <td style="padding:10px 14px;font-size:12px;color:#94A3B8;max-width:160px;">{{ row.notas }}</td>
                   <td style="padding:10px 14px;text-align:right;white-space:nowrap;">
+                    <button onClick="{{ row.onUse }}" style="padding:4px 10px;border:1px solid #BFDBFE;border-radius:6px;background:#EFF6FF;cursor:pointer;font-size:12px;color:#1D4ED8;font-weight:600;font-family:'IBM Plex Sans',sans-serif;margin-right:4px;" style-hover="background:#DBEAFE!important;">Usar</button>
                     <button onClick="{{ row.onEdit }}" style="padding:4px 10px;border:1px solid #E2E8F0;border-radius:6px;background:white;cursor:pointer;font-size:12px;color:#334155;font-family:'IBM Plex Sans',sans-serif;margin-right:4px;" style-hover="background:#F1F5F9!important;">Editar</button>
                     <button onClick="{{ row.onDelReq }}" style="padding:4px 10px;border:1px solid #FEE2E2;border-radius:6px;background:white;cursor:pointer;font-size:12px;color:#DC2626;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#FEF2F2!important;">✕</button>
                   </td>
@@ -218,11 +268,11 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
     <div style="">
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px;">
         <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;padding:20px;">
-          <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">SKUs Registrados</div>
+          <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Tipos de componentes</div>
           <div style="font-size:36px;font-weight:700;color:#0F172A;letter-spacing:-1px;">{{ totalComps }}</div>
         </div>
         <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;padding:20px;">
-          <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Unidades Totales</div>
+          <div style="font-size:11px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Total de componentes</div>
           <div style="font-size:36px;font-weight:700;color:#0F172A;letter-spacing:-1px;">{{ totalQty }}</div>
         </div>
         <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;padding:20px;">
@@ -239,8 +289,8 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
               <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
                 <span style="font-size:13px;font-weight:500;color:#0F172A;">{{ bar.t }}</span>
                 <div style="display:flex;gap:14px;">
-                  <span style="font-size:12px;color:#64748B;">{{ bar.count }} SKUs</span>
-                  <span style="font-size:12px;font-weight:600;color:#374151;min-width:58px;text-align:right;">{{ bar.qty }} uds</span>
+                  <span style="font-size:12px;color:#64748B;">{{ bar.count }} tipos</span>
+                  <span style="font-size:12px;font-weight:600;color:#374151;min-width:70px;text-align:right;">{{ bar.qty }} unidades</span>
                 </div>
               </div>
               <div style="height:6px;background:#F1F5F9;border-radius:3px;overflow:hidden;">
@@ -257,30 +307,176 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
               <div style="display:flex;gap:16px;text-align:right;">
                 <div>
                   <div style="font-size:15px;font-weight:700;color:#0F172A;">{{ card.count }}</div>
-                  <div style="font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:0.04em;">SKUs</div>
+                  <div style="font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:0.04em;">tipos</div>
                 </div>
                 <div>
                   <div style="font-size:15px;font-weight:700;color:#0F172A;">{{ card.qty }}</div>
-                  <div style="font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:0.04em;">uds</div>
+                  <div style="font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:0.04em;">unidades</div>
                 </div>
               </div>
             </div>
           </sc-for>
         </div>
       </div>
+      <!-- Consumo del laboratorio (global) -->
+      <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;overflow:hidden;margin-top:20px;">
+        <div style="padding:16px 20px;border-bottom:1px solid #F1F5F9;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+          <div>
+            <h3 style="font-size:14px;font-weight:700;color:#0F172A;">Consumo del laboratorio</h3>
+            <p style="font-size:12px;color:#94A3B8;margin-top:2px;">Qué tipos de componentes se han consumido, cuánto y por quién</p>
+          </div>
+          <div style="display:flex;gap:20px;">
+            <div style="text-align:right;"><div style="font-size:22px;font-weight:700;color:#0F172A;">{{ consumedTotal }}</div><div style="font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:0.05em;">unidades consumidas</div></div>
+            <div style="text-align:right;"><div style="font-size:22px;font-weight:700;color:#0F172A;">{{ consumedTypesCount }}</div><div style="font-size:10px;color:#94A3B8;text-transform:uppercase;letter-spacing:0.05em;">tipos distintos</div></div>
+          </div>
+        </div>
+        <sc-if value="{{ hasConsumedDetail }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:28px;">
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:14px;">Por tipo de componente</div>
+              <sc-for list="{{ consumedByType }}" as="b" hint-placeholder-count="4">
+                <div style="margin-bottom:12px;">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-size:13px;color:#0F172A;">{{ b.t }}</span><span style="font-size:12px;font-weight:600;color:#374151;">{{ b.q }} uds</span></div>
+                  <div style="height:6px;background:#F1F5F9;border-radius:3px;overflow:hidden;"><div style="height:100%;width:{{ b.pct }}%;background:{{ b.col }};border-radius:3px;"></div></div>
+                </div>
+              </sc-for>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:14px;">Consumido por</div>
+              <sc-for list="{{ consumedByUser }}" as="u" hint-placeholder-count="3">
+                <div style="margin-bottom:12px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <span style="display:flex;align-items:center;gap:7px;font-size:13px;color:#0F172A;"><span style="width:20px;height:20px;border-radius:50%;background:#0F172A;color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;">{{ u.initial }}</span>{{ u.n }}</span>
+                    <span style="font-size:12px;font-weight:600;color:#374151;">{{ u.q }} uds</span>
+                  </div>
+                  <div style="height:6px;background:#F1F5F9;border-radius:3px;overflow:hidden;"><div style="height:100%;width:{{ u.pct }}%;background:#2563EB;border-radius:3px;"></div></div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="overflow-x:auto;border-top:1px solid #F1F5F9;">
+            <table style="width:100%;border-collapse:collapse;min-width:680px;">
+              <thead><tr style="background:#F8FAFC;border-bottom:1px solid #E2E8F0;">
+                <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">USUARIO</th>
+                <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">CÓDIGO</th>
+                <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">COMPONENTE</th>
+                <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">TIPO</th>
+                <th style="padding:9px 16px;text-align:right;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">CANT.</th>
+                <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">FECHA</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ consumedDetail }}" as="a" hint-placeholder-count="4">
+                  <tr style="border-bottom:1px solid #F8FAFC;">
+                    <td style="padding:9px 16px;font-size:13px;color:#0F172A;white-space:nowrap;">{{ a.usuario }}</td>
+                    <td style="padding:9px 16px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#475569;">{{ a.codigo }}</td>
+                    <td style="padding:9px 16px;font-size:13px;color:#0F172A;max-width:220px;">{{ a.descripcion }}</td>
+                    <td style="padding:9px 16px;"><span style="font-size:11px;font-weight:600;color:{{ a.tipoColor }};background:{{ a.tipoBg }};padding:3px 8px;border-radius:9px;">{{ a.tipoLabel }}</span></td>
+                    <td style="padding:9px 16px;font-size:13px;text-align:right;font-weight:600;color:#0F172A;">{{ a.cantidad }}</td>
+                    <td style="padding:9px 16px;font-size:12px;color:#94A3B8;white-space:nowrap;">{{ a.when }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noConsumedDetail }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:48px;text-align:center;color:#94A3B8;font-size:14px;">Todavía no se ha consumido ningún componente en el laboratorio.</div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- ===== MI CUENTA ===== -->
+  <sc-if value="{{ isAccount }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:980px;">
+      <!-- Perfil + cerrar sesión -->
+      <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;padding:24px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="width:52px;height:52px;border-radius:50%;background:#2563EB;color:white;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">{{ userInitial }}</div>
+        <div style="flex:1;min-width:160px;">
+          <div style="font-size:18px;font-weight:700;color:#0F172A;">{{ userName }}</div>
+          <div style="font-size:13px;color:#64748B;">{{ userEmail }}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:26px;font-weight:700;color:#0F172A;">{{ activityCount }}</div>
+          <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:0.05em;">acciones registradas</div>
+        </div>
+        <button onClick="{{ onLogoutAccount }}" style="padding:10px 18px;border:1px solid #FEE2E2;border-radius:8px;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#DC2626;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#FEF2F2!important;">Cerrar sesión</button>
+      </div>
+
+      <!-- Dos secciones: consumidos / administrativos -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+        <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;overflow:hidden;">
+          <div style="padding:16px 20px;border-bottom:1px solid #F1F5F9;"><h3 style="font-size:14px;font-weight:700;color:#0F172A;">Componentes que he consumido</h3><p style="font-size:12px;color:#94A3B8;margin-top:2px;">Lo que has tomado del inventario</p></div>
+          <sc-if value="{{ hasMyConsumed }}" hint-placeholder-val="{{ true }}">
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;">
+                <thead><tr style="background:#F8FAFC;border-bottom:1px solid #E2E8F0;">
+                  <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">CÓDIGO</th>
+                  <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">COMPONENTE</th>
+                  <th style="padding:9px 16px;text-align:right;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">CANT.</th>
+                  <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">FECHA</th>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ myConsumed }}" as="a" hint-placeholder-count="3">
+                    <tr style="border-bottom:1px solid #F8FAFC;">
+                      <td style="padding:9px 16px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#475569;">{{ a.codigo }}</td>
+                      <td style="padding:9px 16px;font-size:13px;color:#0F172A;max-width:200px;">{{ a.descripcion }}</td>
+                      <td style="padding:9px 16px;font-size:13px;text-align:right;font-weight:600;color:#2563EB;">{{ a.cantidad }}</td>
+                      <td style="padding:9px 16px;font-size:12px;color:#94A3B8;white-space:nowrap;">{{ a.when }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noMyConsumed }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:36px;text-align:center;color:#94A3B8;font-size:13px;">Aún no has consumido componentes.</div>
+          </sc-if>
+        </div>
+
+        <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;overflow:hidden;">
+          <div style="padding:16px 20px;border-bottom:1px solid #F1F5F9;"><h3 style="font-size:14px;font-weight:700;color:#0F172A;">Mis cambios administrativos</h3><p style="font-size:12px;color:#94A3B8;margin-top:2px;">Cajas y componentes que agregaste, editaste o eliminaste</p></div>
+          <sc-if value="{{ hasMyAdmin }}" hint-placeholder-val="{{ true }}">
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;">
+                <thead><tr style="background:#F8FAFC;border-bottom:1px solid #E2E8F0;">
+                  <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">ACCIÓN</th>
+                  <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">CÓDIGO</th>
+                  <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">COMPONENTE</th>
+                  <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">FECHA</th>
+                </tr></thead>
+                <tbody>
+                  <sc-for list="{{ myAdmin }}" as="a" hint-placeholder-count="3">
+                    <tr style="border-bottom:1px solid #F8FAFC;">
+                      <td style="padding:9px 16px;"><span style="font-size:11px;font-weight:600;color:{{ a.typeColor }};background:{{ a.typeBg }};padding:3px 9px;border-radius:9px;">{{ a.typeLabel }}</span></td>
+                      <td style="padding:9px 16px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#475569;">{{ a.codigo }}</td>
+                      <td style="padding:9px 16px;font-size:13px;color:#0F172A;max-width:180px;">{{ a.descripcion }}</td>
+                      <td style="padding:9px 16px;font-size:12px;color:#94A3B8;white-space:nowrap;">{{ a.when }}</td>
+                    </tr>
+                  </sc-for>
+                </tbody>
+              </table>
+            </div>
+          </sc-if>
+          <sc-if value="{{ noMyAdmin }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:36px;text-align:center;color:#94A3B8;font-size:13px;">Aún no has hecho cambios administrativos.</div>
+          </sc-if>
+        </div>
+      </div>
+
     </div>
   </sc-if>
 
   <!-- ===== GESTIÓN (AGREGAR / EDITAR) ===== -->
   <sc-if value="{{ isManage }}" hint-placeholder-val="{{ false }}">
-    <div style="animation:fadeUp 0.3s ease;max-width:700px;">
+    <div style="max-width:700px;">
       <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;padding:28px;">
         <h2 style="font-size:18px;font-weight:700;color:#0F172A;margin-bottom:4px;">{{ formTitle }}</h2>
-        <p style="font-size:13px;color:#94A3B8;margin-bottom:24px;">Campos * obligatorios</p>
+        <p style="font-size:13px;color:#94A3B8;margin-bottom:24px;">El código interno se asigna automáticamente. Solo el Código Fabricante es obligatorio.</p>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
           <div>
-            <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Código Interno *</label>
-            <input type="text" value="{{ form.codigoInterno }}" onChange="{{ oFCI }}" placeholder="00001" style="width:100%;padding:9px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;font-family:'IBM Plex Mono',monospace;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
+            <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Código Fabricante *</label>
+            <input type="text" value="{{ form.codigoFabricante }}" onChange="{{ oFFab }}" placeholder="RC0402FR-0710KL" style="width:100%;padding:9px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;font-family:'IBM Plex Mono',monospace;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
           </div>
           <div>
             <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Tipo</label>
@@ -289,17 +485,17 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
             </select>
           </div>
           <div>
-            <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Código Fabricante *</label>
-            <input type="text" value="{{ form.codigoFabricante }}" onChange="{{ oFFab }}" placeholder="RC0402FR-0710KL" style="width:100%;padding:9px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;font-family:'IBM Plex Mono',monospace;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
-          </div>
-          <div>
             <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Contenedor</label>
             <select value="{{ form.contenedor }}" onChange="{{ oFCon }}" style="width:100%;padding:9px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;background:white;cursor:pointer;font-family:'IBM Plex Sans',sans-serif;color:#374151;outline:none;">
               <sc-for list="{{ cts }}" as="ct" hint-placeholder-count="6"><option value="{{ ct.id }}">{{ ct.name }}</option></sc-for>
             </select>
           </div>
-          <div style="grid-column:1/-1;">
-            <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Descripción *</label>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Valor <span style="font-weight:400;color:#94A3B8;">· Ω, V, F, etc.</span></label>
+            <input type="text" value="{{ form.valor }}" onChange="{{ oFVal }}" placeholder="10kΩ · 25V · 100nF" style="width:100%;padding:9px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;font-family:'IBM Plex Mono',monospace;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
+          </div>
+          <div>
+            <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Descripción</label>
             <input type="text" value="{{ form.descripcion }}" onChange="{{ oFDes }}" placeholder="Descripción legible en español" style="width:100%;padding:9px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
           </div>
           <sc-if value="{{ hasComp }}" hint-placeholder-val="{{ true }}">
@@ -311,12 +507,6 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
                 </sc-for>
               </div>
               <p style="margin-top:6px;font-size:12px;color:#64748B;">Seleccionado: <strong style="color:#0F172A;">Cajón {{ form.cajon }}</strong></p>
-            </div>
-          </sc-if>
-          <sc-if value="{{ hasComp }}" hint-placeholder-val="{{ true }}">
-            <div>
-              <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Posición en el cajón</label>
-              <input type="number" value="{{ form.posicion }}" onChange="{{ oFPos }}" min="1" max="10" style="width:100%;padding:9px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
             </div>
           </sc-if>
           <div>
@@ -336,27 +526,87 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
             <input type="text" value="{{ form.notas }}" onChange="{{ oFNot }}" placeholder="Encapsulado, tolerancia, observaciones…" style="width:100%;padding:9px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
           </div>
         </div>
-        <div style="display:flex;gap:12px;margin-top:24px;justify-content:flex-end;">
+        <div style="display:flex;gap:12px;margin-top:24px;justify-content:flex-end;flex-wrap:wrap;">
           <sc-if value="{{ isEditing }}" hint-placeholder-val="{{ false }}">
             <button onClick="{{ onCancel }}" style="padding:10px 20px;border:1px solid #E2E8F0;border-radius:8px;background:white;cursor:pointer;font-size:14px;font-weight:500;color:#475569;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#F8FAFC!important;">Cancelar</button>
+            <button onClick="{{ onSave }}" style="padding:10px 24px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1D4ED8!important;">Guardar cambios</button>
           </sc-if>
           <sc-if value="{{ isNotEditing }}" hint-placeholder-val="{{ true }}">
-            <button onClick="{{ onAdd }}" style="padding:10px 24px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1D4ED8!important;">Agregar componente</button>
-          </sc-if>
-          <sc-if value="{{ isEditing }}" hint-placeholder-val="{{ false }}">
-            <button onClick="{{ onSave }}" style="padding:10px 24px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1D4ED8!important;">Guardar cambios</button>
+            <button onClick="{{ onAddStay }}" style="padding:10px 20px;border:1px solid #2563EB;border-radius:8px;background:white;cursor:pointer;font-size:14px;font-weight:600;color:#2563EB;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#EFF6FF!important;">Agregar y seguir aquí</button>
+            <button onClick="{{ onAddGo }}" style="padding:10px 24px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1D4ED8!important;">Agregar e ir a la caja</button>
           </sc-if>
         </div>
       </div>
     </div>
   </sc-if>
 
+  <!-- ===== ADMINISTRADOR ===== -->
+  <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+    <div style="max-width:980px;">
+      <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;padding:24px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="width:52px;height:52px;border-radius:12px;background:#0F172A;color:#60A5FA;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">⚙</div>
+        <div style="flex:1;min-width:160px;">
+          <div style="font-size:18px;font-weight:700;color:#0F172A;">Panel de administrador</div>
+          <div style="font-size:13px;color:#64748B;">Importar inventario y ver el registro de cambios</div>
+        </div>
+        <button onClick="{{ onAdminLogout }}" style="padding:10px 18px;border:1px solid #FEE2E2;border-radius:8px;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#DC2626;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#FEF2F2!important;">Salir del modo admin</button>
+      </div>
+
+      <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;padding:24px;margin-bottom:16px;">
+        <h3 style="font-size:14px;font-weight:700;color:#0F172A;margin-bottom:4px;">Importar / exportar inventario</h3>
+        <p style="font-size:13px;color:#64748B;margin-bottom:16px;">Sube un archivo JSON para reemplazar el inventario actual. Cada importación queda registrada en el historial.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <label style="display:inline-flex;align-items:center;gap:6px;padding:10px 18px;background:#2563EB;color:white;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1D4ED8!important;">
+            ↑ Importar JSON
+            <input type="file" accept=".json,application/json" onChange="{{ onAdminImport }}" style="display:none;" />
+          </label>
+          <button onClick="{{ onExportJSON }}" style="padding:10px 18px;background:white;border:1px solid #E2E8F0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#475569;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#F8FAFC!important;">↓ Exportar JSON</button>
+          <button onClick="{{ onExportCSV }}" style="padding:10px 18px;background:white;border:1px solid #E2E8F0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#475569;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#F8FAFC!important;">↓ Exportar CSV</button>
+        </div>
+      </div>
+
+      <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;overflow:hidden;">
+        <div style="padding:16px 20px;border-bottom:1px solid #F1F5F9;">
+          <h3 style="font-size:14px;font-weight:700;color:#0F172A;">Registro de cambios del inventario</h3>
+          <p style="font-size:12px;color:#94A3B8;margin-top:2px;">Todas las veces que el inventario se actualizó, modificó, editó o importó</p>
+        </div>
+        <sc-if value="{{ hasChangelog }}" hint-placeholder-val="{{ true }}">
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;min-width:680px;">
+              <thead><tr style="background:#F8FAFC;border-bottom:1px solid #E2E8F0;">
+                <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">ACCIÓN</th>
+                <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">CÓDIGO</th>
+                <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">COMPONENTE</th>
+                <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">USUARIO</th>
+                <th style="padding:9px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">FECHA</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ changelogRows }}" as="c" hint-placeholder-count="6">
+                  <tr style="border-bottom:1px solid #F8FAFC;">
+                    <td style="padding:9px 16px;"><span style="font-size:11px;font-weight:600;color:{{ c.typeColor }};background:{{ c.typeBg }};padding:3px 9px;border-radius:9px;">{{ c.typeLabel }}</span></td>
+                    <td style="padding:9px 16px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#475569;">{{ c.codigo }}</td>
+                    <td style="padding:9px 16px;font-size:13px;color:#0F172A;max-width:240px;">{{ c.descripcion }}</td>
+                    <td style="padding:9px 16px;font-size:13px;color:#0F172A;white-space:nowrap;">{{ c.usuario }}</td>
+                    <td style="padding:9px 16px;font-size:12px;color:#94A3B8;white-space:nowrap;">{{ c.when }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noChangelog }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:48px;text-align:center;color:#94A3B8;font-size:14px;">Aún no hay cambios registrados en el inventario.</div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
 </main>
 
-<!-- ===== MODAL ===== -->
+<!-- ===== MODAL CONTENIDO DE CAJÓN ===== -->
 <sc-if value="{{ showModal }}" hint-placeholder-val="{{ false }}">
   <div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px;" onClick="{{ onCloseModal }}">
-    <div style="background:white;border-radius:14px;width:100%;max-width:820px;max-height:80vh;display:flex;flex-direction:column;animation:popIn 0.2s ease;" onClick="{{ stopProp }}">
+    <div style="background:white;border-radius:14px;width:100%;max-width:820px;max-height:80vh;display:flex;flex-direction:column;" onClick="{{ stopProp }}">
       <div style="padding:18px 24px;border-bottom:1px solid #E2E8F0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
         <div>
           <h3 style="font-size:16px;font-weight:700;color:#0F172A;margin:0;">{{ mTitle }}</h3>
@@ -388,7 +638,6 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
                 <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">FABRICANTE</th>
                 <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">DESCRIPCIÓN</th>
                 <th style="padding:10px 16px;text-align:right;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">CANT.</th>
-                <th style="padding:10px 16px;text-align:left;font-size:11px;font-weight:700;color:#64748B;letter-spacing:0.05em;">NOTAS</th>
                 <th style="padding:10px 16px;"></th>
               </tr>
             </thead>
@@ -400,10 +649,10 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
                     <span style="font-size:11px;font-weight:600;color:{{ mi.col }};background:{{ mi.tipoBg }};padding:3px 8px;border-radius:9px;">{{ mi.tipo }}</span>
                   </td>
                   <td style="padding:10px 16px;font-size:12px;font-family:'IBM Plex Mono',monospace;color:#0F172A;">{{ mi.codigoFabricante }}</td>
-                  <td style="padding:10px 16px;font-size:13px;color:#0F172A;max-width:200px;">{{ mi.descripcion }}</td>
+                  <td style="padding:10px 16px;font-size:13px;color:#0F172A;max-width:220px;"><span style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:#1D4ED8;">{{ mi.valor }}</span> {{ mi.descripcion }}</td>
                   <td style="padding:10px 16px;font-size:13px;text-align:right;font-weight:600;color:#0F172A;">{{ mi.cantidad }}</td>
-                  <td style="padding:10px 16px;font-size:12px;color:#94A3B8;">{{ mi.notas }}</td>
                   <td style="padding:10px 16px;text-align:right;white-space:nowrap;">
+                    <button onClick="{{ mi.onUse }}" style="padding:4px 9px;border:1px solid #BFDBFE;border-radius:5px;background:#EFF6FF;cursor:pointer;font-size:11px;color:#1D4ED8;font-weight:600;font-family:'IBM Plex Sans',sans-serif;margin-right:4px;" style-hover="background:#DBEAFE!important;">Usar</button>
                     <button onClick="{{ mi.onEdit }}" style="padding:4px 9px;border:1px solid #E2E8F0;border-radius:5px;background:white;cursor:pointer;font-size:11px;color:#334155;font-family:'IBM Plex Sans',sans-serif;margin-right:4px;" style-hover="background:#F1F5F9!important;">Editar</button>
                     <button onClick="{{ mi.onDelReq }}" style="padding:4px 9px;border:1px solid #FEE2E2;border-radius:5px;background:white;cursor:pointer;font-size:11px;color:#DC2626;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#FEF2F2!important;">✕</button>
                   </td>
@@ -417,10 +666,112 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
   </div>
 </sc-if>
 
+<!-- ===== MODAL: USAR / TOMAR COMPONENTE ===== -->
+<sc-if value="{{ showUse }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:320;display:flex;align-items:center;justify-content:center;padding:20px;" onClick="{{ onCancelUse }}">
+    <div style="background:white;border-radius:14px;padding:26px;max-width:420px;width:100%;" onClick="{{ stopProp }}">
+      <h3 style="font-size:17px;font-weight:700;color:#0F172A;margin-bottom:4px;">Usar componente</h3>
+      <p style="font-size:13px;color:#64748B;margin-bottom:18px;">{{ useDesc }}</p>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:8px;padding:12px 14px;margin-bottom:18px;">
+        <span style="font-size:13px;color:#64748B;">Disponible</span>
+        <span style="font-size:15px;font-weight:700;color:#0F172A;">{{ useMax }}</span>
+      </div>
+      <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">¿Cuántas unidades vas a usar?</label>
+      <input type="number" value="{{ useQty }}" onChange="{{ onUseQty }}" min="1" max="{{ useMax }}" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;margin-bottom:20px;" style-focus="border-color:#2563EB!important;" />
+      <div style="display:flex;gap:12px;justify-content:flex-end;">
+        <button onClick="{{ onCancelUse }}" style="padding:10px 20px;border:1px solid #E2E8F0;border-radius:8px;background:white;cursor:pointer;font-size:14px;color:#475569;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#F8FAFC!important;">Cancelar</button>
+        <button onClick="{{ onConfirmUse }}" style="padding:10px 22px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1D4ED8!important;">Confirmar uso</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ===== MODAL: NUEVA CAJA ===== -->
+<sc-if value="{{ showNewBox }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:320;display:flex;align-items:center;justify-content:center;padding:20px;" onClick="{{ onCancelBox }}">
+    <div style="background:white;border-radius:14px;padding:26px;max-width:480px;width:100%;max-height:88vh;overflow-y:auto;" onClick="{{ stopProp }}">
+      <h3 style="font-size:17px;font-weight:700;color:#0F172A;margin-bottom:4px;">Nueva caja de almacenamiento</h3>
+      <p style="font-size:13px;color:#64748B;margin-bottom:20px;">Dale un nombre, elige el tipo y sube una foto de la caja.</p>
+      <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Nombre *</label>
+      <input type="text" value="{{ boxName }}" onChange="{{ onBoxName }}" placeholder="Ej. Caja de sensores" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;margin-bottom:18px;" style-focus="border-color:#2563EB!important;" />
+      <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:8px;">Tipo de caja</label>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:18px;">
+        <sc-for list="{{ boxTypeBtns }}" as="bt" hint-placeholder-count="3">
+          <button type="button" onClick="{{ bt.onClick }}" style="{{ bt.style }}">{{ bt.label }}</button>
+        </sc-for>
+      </div>
+      <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:8px;">Imagen *</label>
+      <div style="display:flex;gap:14px;align-items:center;margin-bottom:8px;">
+        <sc-if value="{{ boxHasImage }}" hint-placeholder-val="{{ false }}">
+          <img style="width:72px;height:72px;border-radius:8px;object-fit:contain;background:#F8FAFC;border:1px solid #E2E8F0;flex-shrink:0;" alt="imagen caja" />
+        </sc-if>
+        <label style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#475569;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#E2E8F0!important;">
+          {{ boxImageBtnLabel }}
+          <input type="file" accept="image/*" onChange="{{ onBoxImage }}" style="display:none;" />
+        </label>
+      </div>
+      <sc-if value="{{ boxHasError }}" hint-placeholder-val="{{ false }}">
+        <p style="font-size:12px;color:#DC2626;margin-top:6px;">{{ boxError }}</p>
+      </sc-if>
+      <div style="display:flex;gap:12px;justify-content:flex-end;margin-top:22px;">
+        <button onClick="{{ onCancelBox }}" style="padding:10px 20px;border:1px solid #E2E8F0;border-radius:8px;background:white;cursor:pointer;font-size:14px;color:#475569;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#F8FAFC!important;">Cancelar</button>
+        <button onClick="{{ onCreateBox }}" style="padding:10px 22px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1D4ED8!important;">Crear caja</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ===== MODAL: CUENTA (LOGIN / REGISTRO) ===== -->
+<sc-if value="{{ authModalOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;" onClick="{{ onCloseAuth }}">
+    <div style="background:white;border-radius:14px;padding:28px;max-width:420px;width:100%;" onClick="{{ stopProp }}">
+      <h3 style="font-size:18px;font-weight:700;color:#0F172A;margin-bottom:6px;">{{ authTitle }}</h3>
+      <p style="font-size:13px;color:#64748B;margin-bottom:20px;">Necesitas una cuenta para agregar, modificar o usar componentes. Ver el inventario es libre.</p>
+      <div style="display:flex;gap:6px;background:#F1F5F9;border-radius:9px;padding:4px;margin-bottom:20px;">
+        <button onClick="{{ onSwitchLogin }}" style="{{ authLoginTabStyle }}">Iniciar sesión</button>
+        <button onClick="{{ onSwitchRegister }}" style="{{ authRegTabStyle }}">Crear cuenta</button>
+      </div>
+      <sc-if value="{{ authIsRegister }}" hint-placeholder-val="{{ false }}">
+        <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Nombre</label>
+        <input type="text" value="{{ authName }}" onChange="{{ onAuthName }}" placeholder="Tu nombre" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;margin-bottom:14px;" style-focus="border-color:#2563EB!important;" />
+      </sc-if>
+      <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Correo</label>
+      <input type="email" value="{{ authEmail }}" onChange="{{ onAuthEmail }}" placeholder="tu@correo.com" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;margin-bottom:14px;" style-focus="border-color:#2563EB!important;" />
+      <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Contraseña</label>
+      <div style="position:relative;">
+        <input type="{{ pwdType }}" value="{{ authPassword }}" onChange="{{ onAuthPassword }}" placeholder="••••••" style="width:100%;padding:10px 64px 10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
+        <button type="button" onClick="{{ onTogglePwd }}" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);padding:4px 10px;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;color:#475569;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#E2E8F0!important;">{{ pwdBtnLabel }}</button>
+      </div>
+      <sc-if value="{{ authHasError }}" hint-placeholder-val="{{ false }}">
+        <p style="font-size:12px;color:#DC2626;margin-top:8px;">{{ authError }}</p>
+      </sc-if>
+      <button onClick="{{ onAuthSubmit }}" style="width:100%;margin-top:18px;padding:11px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1D4ED8!important;">{{ authSubmitLabel }}</button>
+    </div>
+  </div>
+</sc-if>
+
+<!-- ===== MODAL: ADMINISTRADOR ===== -->
+<sc-if value="{{ adminModalOpen }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;" onClick="{{ onCloseAdmin }}">
+    <div style="background:white;border-radius:14px;padding:28px;max-width:400px;width:100%;" onClick="{{ stopProp }}">
+      <h3 style="font-size:18px;font-weight:700;color:#0F172A;margin-bottom:6px;">Acceso de administrador</h3>
+      <p style="font-size:13px;color:#64748B;margin-bottom:20px;">Ingresa las credenciales de administrador para gestionar el inventario.</p>
+      <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Usuario</label>
+      <input type="text" value="{{ adminUser }}" onChange="{{ onAdminUser }}" placeholder="admin" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;margin-bottom:14px;" style-focus="border-color:#2563EB!important;" />
+      <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Contraseña</label>
+      <input type="password" value="{{ adminPass }}" onChange="{{ onAdminPass }}" placeholder="••••" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
+      <sc-if value="{{ adminHasError }}" hint-placeholder-val="{{ false }}">
+        <p style="font-size:12px;color:#DC2626;margin-top:8px;">{{ adminError }}</p>
+      </sc-if>
+      <button onClick="{{ onAdminSubmit }}" style="width:100%;margin-top:18px;padding:11px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1D4ED8!important;">Entrar</button>
+    </div>
+  </div>
+</sc-if>
+
 <!-- ===== CONFIRMAR ELIMINAR ===== -->
 <sc-if value="{{ showDel }}" hint-placeholder-val="{{ false }}">
   <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;">
-    <div style="background:white;border-radius:14px;padding:28px;max-width:400px;width:100%;animation:popIn 0.2s ease;">
+    <div style="background:white;border-radius:14px;padding:28px;max-width:400px;width:100%;">
       <h3 style="font-size:17px;font-weight:700;color:#0F172A;margin-bottom:8px;">¿Eliminar componente?</h3>
       <p style="font-size:13px;color:#64748B;margin-bottom:24px;line-height:1.6;font-family:'IBM Plex Mono',monospace;word-break:break-all;">{{ delDesc }}</p>
       <div style="display:flex;gap:12px;justify-content:flex-end;">
@@ -433,7 +784,7 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
 
 <!-- ===== TOAST ===== -->
 <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}">
-  <div style="position:fixed;bottom:24px;right:24px;z-index:500;background:{{ toastBg }};color:white;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.2);animation:fadeUp 0.3s ease;max-width:340px;">{{ toastMsg }}</div>
+  <div style="position:fixed;bottom:24px;right:24px;z-index:500;background:{{ toastBg }};color:white;padding:12px 20px;border-radius:10px;font-size:14px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,0.2);max-width:340px;">{{ toastMsg }}</div>
 </sc-if>
 
 </div>
@@ -454,114 +805,152 @@ class Component extends DCLogic {
 
   TC = {Resistencia:'#DC2626',Capacitor:'#2563EB',IC:'#7C3AED',Transistor:'#D97706',Sensor:'#059669',Regulador:'#0891B2',Diodo:'#DB2777',LED:'#F59E0B',Inductor:'#64748B',Conector:'#9333EA','Módulo':'#16A34A',Cristal:'#6366F1',Relay:'#EA580C',Otro:'#64748B'};
 
-  DEMO = [
-    {id:'d01',codigoInterno:'00001',contenedor:'G1',cajon:1,posicion:1,tipo:'Resistencia',codigoFabricante:'RC0402FR-0710KL',descripcion:'Resistencia 10kΩ SMD 0402 1%',cantidad:500,espacioOcupado:'Medio',notas:'1/16W, ±1%'},
-    {id:'d02',codigoInterno:'00002',contenedor:'G1',cajon:1,posicion:2,tipo:'Resistencia',codigoFabricante:'RC0402FR-074K7L',descripcion:'Resistencia 4.7kΩ SMD 0402 1%',cantidad:300,espacioOcupado:'Bajo',notas:''},
-    {id:'d03',codigoInterno:'00003',contenedor:'G1',cajon:2,posicion:1,tipo:'Resistencia',codigoFabricante:'RC0402FR-071KL',descripcion:'Resistencia 1kΩ SMD 0402 1%',cantidad:400,espacioOcupado:'Medio',notas:''},
-    {id:'d04',codigoInterno:'00004',contenedor:'G1',cajon:3,posicion:1,tipo:'Resistencia',codigoFabricante:'RC0402FR-07470RL',descripcion:'Resistencia 470Ω SMD 0402 1%',cantidad:200,espacioOcupado:'Bajo',notas:''},
-    {id:'d05',codigoInterno:'00005',contenedor:'G1',cajon:5,posicion:1,tipo:'Capacitor',codigoFabricante:'GRM155R61A104KA01D',descripcion:'Capacitor cerámico 100nF 10V 0402',cantidad:200,espacioOcupado:'Bajo',notas:'MLCC ±10%'},
-    {id:'d06',codigoInterno:'00006',contenedor:'G1',cajon:5,posicion:2,tipo:'Capacitor',codigoFabricante:'GRM155R60J105KA12D',descripcion:'Capacitor cerámico 1µF 6.3V 0402',cantidad:150,espacioOcupado:'Bajo',notas:''},
-    {id:'d07',codigoInterno:'00007',contenedor:'G1',cajon:6,posicion:1,tipo:'Capacitor',codigoFabricante:'GRM188R61E226ME15D',descripcion:'Capacitor cerámico 22µF 25V 0603',cantidad:80,espacioOcupado:'Bajo',notas:''},
-    {id:'d08',codigoInterno:'00008',contenedor:'G1',cajon:10,posicion:1,tipo:'IC',codigoFabricante:'BQ25155YFPR',descripcion:'Cargador Li-Ion 500mA I2C',cantidad:20,espacioOcupado:'Bajo',notas:'DSBGA-9'},
-    {id:'d09',codigoInterno:'00009',contenedor:'G1',cajon:10,posicion:2,tipo:'IC',codigoFabricante:'TPS63020DSJR',descripcion:'Buck-boost 1.8-5.5V 1A',cantidad:15,espacioOcupado:'Bajo',notas:'WSON-10'},
-    {id:'d10',codigoInterno:'00010',contenedor:'G1',cajon:12,posicion:1,tipo:'IC',codigoFabricante:'STM32F103C8T6',descripcion:'Microcontrolador ARM Cortex-M3 72MHz',cantidad:8,espacioOcupado:'Bajo',notas:'LQFP-48'},
-    {id:'d11',codigoInterno:'00011',contenedor:'G1',cajon:15,posicion:1,tipo:'Sensor',codigoFabricante:'BME280',descripcion:'Sensor temperatura, humedad y presión',cantidad:10,espacioOcupado:'Bajo',notas:'I2C/SPI'},
-    {id:'d12',codigoInterno:'00012',contenedor:'G1',cajon:15,posicion:2,tipo:'Sensor',codigoFabricante:'MPU-6050',descripcion:'IMU 6 ejes giroscopio + acelerómetro',cantidad:5,espacioOcupado:'Bajo',notas:'I2C'},
-    {id:'d13',codigoInterno:'00013',contenedor:'G1',cajon:20,posicion:1,tipo:'Transistor',codigoFabricante:'IRLZ44N',descripcion:'MOSFET N-Ch 55V 47A TO-220',cantidad:12,espacioOcupado:'Bajo',notas:''},
-    {id:'d14',codigoInterno:'00014',contenedor:'G1',cajon:25,posicion:1,tipo:'Regulador',codigoFabricante:'AMS1117-3.3',descripcion:'Regulador LDO 3.3V 1A SOT-223',cantidad:30,espacioOcupado:'Bajo',notas:''},
-    {id:'d15',codigoInterno:'00015',contenedor:'G1',cajon:30,posicion:1,tipo:'Diodo',codigoFabricante:'1N4148W',descripcion:'Diodo señal rápida 100V 150mA',cantidad:100,espacioOcupado:'Bajo',notas:'SOD-123'},
-    {id:'d16',codigoInterno:'00016',contenedor:'G1',cajon:35,posicion:1,tipo:'LED',codigoFabricante:'LTST-C191KFKT',descripcion:'LED rojo 0402 620nm',cantidad:200,espacioOcupado:'Bajo',notas:'Vf=2.0V'},
-    {id:'d17',codigoInterno:'30001',contenedor:'C1',cajon:1,posicion:1,tipo:'IC',codigoFabricante:'74HC00N',descripcion:'Compuerta NAND cuádruple DIP-14',cantidad:25,espacioOcupado:'Medio',notas:'Through-hole'},
-    {id:'d18',codigoInterno:'30002',contenedor:'C1',cajon:2,posicion:1,tipo:'IC',codigoFabricante:'74HC04N',descripcion:'Inversor hex DIP-14',cantidad:20,espacioOcupado:'Medio',notas:'Through-hole'},
-    {id:'d19',codigoInterno:'30003',contenedor:'C1',cajon:3,posicion:1,tipo:'Transistor',codigoFabricante:'2N3904',descripcion:'NPN BJT 40V 200mA TO-92',cantidad:50,espacioOcupado:'Medio',notas:'Through-hole'},
-    {id:'d20',codigoInterno:'30004',contenedor:'C1',cajon:4,posicion:1,tipo:'Regulador',codigoFabricante:'LM7805CT',descripcion:'Regulador lineal +5V 1A TO-220',cantidad:10,espacioOcupado:'Bajo',notas:'Through-hole'},
-    {id:'d21',codigoInterno:'30005',contenedor:'C1',cajon:5,posicion:1,tipo:'IC',codigoFabricante:'NE555P',descripcion:'Temporizador 555 DIP-8',cantidad:15,espacioOcupado:'Bajo',notas:'Through-hole'},
-    {id:'d22',codigoInterno:'30006',contenedor:'C1',cajon:6,posicion:1,tipo:'IC',codigoFabricante:'LM741CN',descripcion:'Amplificador operacional DIP-8',cantidad:12,espacioOcupado:'Bajo',notas:'Through-hole'},
-    {id:'d23',codigoInterno:'40001',contenedor:'C2',cajon:1,posicion:1,tipo:'IC',codigoFabricante:'74LS138N',descripcion:'Decodificador 3-a-8 DIP-16',cantidad:8,espacioOcupado:'Bajo',notas:'Through-hole'},
-    {id:'d24',codigoInterno:'40002',contenedor:'C2',cajon:2,posicion:1,tipo:'IC',codigoFabricante:'CD4051BE',descripcion:'Mux analógico 8:1 DIP-16',cantidad:6,espacioOcupado:'Bajo',notas:'Through-hole'},
-    {id:'d25',codigoInterno:'40003',contenedor:'C2',cajon:3,posicion:1,tipo:'Transistor',codigoFabricante:'2N2222A',descripcion:'NPN BJT 40V 600mA TO-18',cantidad:30,espacioOcupado:'Medio',notas:'Through-hole'}
-  ];
+
 
   PREFIX = {G1:'0',G2:'1',C1:'2',C2:'3',C3:'4',C4:'5'};
-
-  nextCode(contId) {
-    const pfx = this.PREFIX[contId]||'0';
-    const comps = this.state.comps||[];
-    const nums = comps.filter(c=>c.contenedor===contId).map(c=>parseInt(c.codigoInterno)).filter(n=>!isNaN(n)&&n>0);
-    const base = parseInt(pfx+'0001');
-    const next = nums.length ? Math.max(...nums)+1 : base;
-    return String(next).padStart(5,'0');
-  }
 
   state = {
     view:'visual', container:'G1', modal:null, editId:null, delId:null,
     filters:{tipo:'',cont:'',q:''},
     sort:{col:'codigoInterno',dir:'asc'},
-    form:{codigoInterno:'',contenedor:'G1',cajon:1,posicion:1,tipo:'Resistencia',codigoFabricante:'',descripcion:'',cantidad:0,espacioOcupado:'Bajo',notas:''},
-    comps:null, toast:null
+    form:{codigoInterno:'',contenedor:'G1',cajon:1,posicion:1,tipo:'Resistencia',codigoFabricante:'',valor:'',descripcion:'',cantidad:0,espacioOcupado:'Bajo',notas:''},
+    comps:null, toast:null, customBoxes:[],
+    session:null,
+    authModal:false, authMode:'login', authForm:{nombre:'',email:'',password:''}, authError:'', pendingAction:null, showPwd:false,
+    showNewBox:false, boxForm:{name:'',type:'caja12',image:''}, boxError:'',
+    useId:null, useQty:1,
+    adminAuth:false, adminModal:false, adminForm:{user:'',pass:''}, adminError:''
   };
 
-  componentDidMount() {
-    try {
-      const s = localStorage.getItem('li_v2');
-      this.setState({comps: s ? JSON.parse(s) : this.DEMO});
-    } catch(e) { this.setState({comps: this.DEMO}); }
+  async componentDidMount() {
+    // Inicializa auth: carga usuarios, transacciones y changelog desde Supabase
+    if (window.LabAuth && window.LabAuth.init) {
+      try { 
+        await window.LabAuth.init();
+        // Después de init, restaurar la sesión si estaba guardada
+        const session = window.LabAuth.getSession();
+        console.log('[componentDidMount] sesión restaurada:', session);
+      } catch (e) { 
+        console.error('Error init auth:', e); 
+      }
+    }
+
+    let comps = [];
+    let boxes = [];
+
+    // Cargar componentes desde Supabase
+    if (window.SupabaseClient) {
+      try {
+        comps = await window.SupabaseClient.getAll();
+        if (!Array.isArray(comps)) comps = [];
+      } catch (e) {
+        console.error('Error cargando de Supabase:', e);
+        comps = [];
+      }
+    }
+
+    // Cajas personalizadas siguen en localStorage (no son datos de negocio)
+    try { const b=localStorage.getItem('li_boxes'); boxes = b ? JSON.parse(b) : []; } catch(e){ boxes=[]; }
+
+    const session = (window.LabAuth && window.LabAuth.getSession && window.LabAuth.getSession()) || null;
+    let adminAuth=false; try{ adminAuth = localStorage.getItem('li_admin')==='1'; }catch(e){}
+    this.setState({comps, customBoxes:boxes, session, adminAuth});
   }
 
-  persist(c) { try { localStorage.setItem('li_v2', JSON.stringify(c)); } catch(e) {} }
+  allBoxes(){ return [...this.CONTAINERS, ...((this.state.customBoxes)||[])]; }
+  getCT(id){ return this.allBoxes().find(c=>c.id===id); }
 
-  uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+  async persist(c) {
+    // c es el array completo de componentes
+    // En Supabase, guardamos cada componente individualmente
+    // Por ahora, solo actualizamos el estado local
+    // Las operaciones CRUD reales ocurren en add(), saveEdit(), del(), confirmUse()
+  }
+  
+  persistBoxes(b) { try{ localStorage.setItem('li_boxes', JSON.stringify(b)); }catch(e){} }
 
-  rgba(hex, a) {
-    if (!hex || hex[0]!=='#') return `rgba(100,116,139,${a})`;
+  uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2); }
+
+  rgba(hex, a){
+    if(!hex||hex[0]!=='#') return `rgba(100,116,139,${a})`;
     const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
     return `rgba(${r},${g},${b},${a})`;
   }
 
-  getCT(id) { return this.CONTAINERS.find(c=>c.id===id); }
+  nextCode(contId){
+    const pfx=this.PREFIX[contId]||'9';
+    const comps=this.state.comps||[];
+    const nums=comps.filter(c=>c.contenedor===contId).map(c=>parseInt(c.codigoInterno)).filter(n=>!isNaN(n)&&n>0);
+    const base=parseInt(pfx+'0001');
+    const next=nums.length?Math.max(...nums)+1:base;
+    return String(next).padStart(5,'0');
+  }
 
-  cells(cid) {
-    const ct = this.getCT(cid);
-    if (!ct||!ct.compartments) return [];
-    const comps = this.state.comps||[];
+  // ---------- sesión / auth ----------
+  requireAuth(action){
+    if(this.state.session){ action(); }
+    else { this.setState({authModal:true,authMode:'login',authError:'',authForm:{nombre:'',email:'',password:''},pendingAction:action,showPwd:false}); }
+  }
+  async doAuth(){
+    if(!window.LabAuth) return;
+    const {authMode,authForm}=this.state;
+    const res = authMode==='login' ? await window.LabAuth.login(authForm) : await window.LabAuth.register(authForm);
+    if(!res.ok){ this.setState({authError:res.error}); return; }
+    const action=this.state.pendingAction;
+    this.setState({session:{nombre:res.user.nombre,email:res.user.email},authModal:false,pendingAction:null,authError:''});
+    this.toast('success', authMode==='login'?`Hola de nuevo, ${res.user.nombre}`:`Cuenta creada · bienvenido, ${res.user.nombre}`);
+    if(action) setTimeout(action,0);
+  }
+  doLogout(){ if(window.LabAuth) window.LabAuth.logout(); this.setState({session:null,view:'visual'}); this.toast('success','Sesión cerrada'); }
+
+  // ---------- administrador ----------
+  openAdmin(){ if(this.state.adminAuth){ this.setState({view:'admin'}); } else { this.setState({adminModal:true,adminForm:{user:'',pass:''},adminError:''}); } }
+  doAdminLogin(){ const {user,pass}=this.state.adminForm; if((user||'').trim()==='admin'&&pass==='1234'){ try{localStorage.setItem('li_admin','1');}catch(e){} this.setState({adminAuth:true,adminModal:false,adminError:'',view:'admin'}); this.toast('success','Modo administrador activado'); } else { this.setState({adminError:'Usuario o contraseña incorrectos'}); } }
+  adminLogout(){ try{localStorage.removeItem('li_admin');}catch(e){} this.setState({adminAuth:false,view:'visual'}); this.toast('success','Sesión de administrador cerrada'); }
+  sadm(k){ return e=>this.setState(s=>({adminForm:{...s.adminForm,[k]:e.target.value}})); }
+
+  // ---------- CRUD ----------
+  cells(cid){
+    const ct=this.getCT(cid);
+    if(!ct||!ct.compartments) return [];
+    const comps=this.state.comps||[];
     return Array.from({length:ct.compartments},(_,i)=>{
       const n=i+1;
       const its=comps.filter(c=>c.contenedor===cid&&c.cajon===n);
       const col=its.length?(this.TC[its[0].tipo]||'#2563EB'):null;
-      let fillPct=0,fillColor='#E2E8F0';
+      let fillColor='#E2E8F0';
       if(its.length){
         const hasAlto=its.some(c=>c.espacioOcupado==='Alto');
         const hasMedio=its.some(c=>c.espacioOcupado==='Medio');
-        if(hasAlto){fillPct=90;fillColor='#EF4444';}
-        else if(hasMedio){fillPct=55;fillColor='#F59E0B';}
-        else{fillPct=25;fillColor='#22C55E';}
+        if(hasAlto) fillColor='#EF4444'; else if(hasMedio) fillColor='#F59E0B'; else fillColor='#22C55E';
       }
       const fillLabel=its.length?(its.some(c=>c.espacioOcupado==='Alto')?'· lleno':its.some(c=>c.espacioOcupado==='Medio')?'· medio':'· bajo'):'';
       return {
         num:n, hasItems:its.length>0, itemCount:its.length,
         title:`Cajón ${n} · ${its.length?its.length+' comp.':'vacío'} ${fillLabel}`,
         bg:col?this.rgba(col,0.15):'transparent',
-        borderColor:col?this.rgba(col,0.4):'rgba(0,0,0,0.1)',
+        borderColor:col?this.rgba(col,0.5):'#E2E8F0',
         drawerBg:col?this.rgba(col,0.38):'#3A3A3A',
         drawerBorder:col?this.rgba(col,0.65):'#4D4D4D',
         labelColor:its.length>0?'#CCC':'#555',
-        fillPct, fillColor,
+        fillColor,
         onClick:()=>this.setState({modal:{cid,n}})
       };
     });
   }
 
-  enrich(c) {
+  enrich(c){
     const col=this.TC[c.tipo]||'#64748B';
     return {
       ...c, col, tipoBg:this.rgba(col,0.1),
-      ubic:c.cajon?`${this.getCT(c.contenedor)?.name||c.contenedor} · C${String(c.cajon).padStart(2,'0')}${c.posicion>1?' P'+c.posicion:''}`:( this.getCT(c.contenedor)?.name||c.contenedor),
-      onEdit:()=>this.startEdit(c.id),
-      onDelReq:()=>this.setState({delId:c.id})
+      ubic:c.cajon?`${this.getCT(c.contenedor)?.name||c.contenedor} · C${String(c.cajon).padStart(2,'0')}${c.posicion>1?' P'+c.posicion:''}`:(this.getCT(c.contenedor)?.name||c.contenedor),
+      onUse:()=>this.requireAuth(()=>this.openUse(c.id)),
+      onEdit:()=>this.requireAuth(()=>this.startEdit(c.id)),
+      onDelReq:()=>this.requireAuth(()=>this.setState({delId:c.id}))
     };
   }
 
-  filtered() {
+  filtered(){
     const {filters,sort}=this.state;
     let list=(this.state.comps||[]).filter(c=>{
       if(filters.tipo&&c.tipo!==filters.tipo) return false;
@@ -577,53 +966,163 @@ class Component extends DCLogic {
     return list.map(c=>this.enrich(c));
   }
 
-  add() {
+  async add(go){
+    if(!this.state.session){ this.requireAuth(()=>{}); return; }
     const f=this.state.form;
-    if(!f.codigoInterno||!f.codigoFabricante||!f.descripcion){this.toast('error','Campos obligatorios: Código Interno, Código Fabricante y Descripción');return;}
-    const n={...f,id:this.uid(),cajon:parseInt(f.cajon)||1,posicion:parseInt(f.posicion)||1,cantidad:parseInt(f.cantidad)||0};
+    if(!f.codigoFabricante){ this.toast('error','El Código Fabricante es obligatorio'); return; }
+    const codigoInterno=f.codigoInterno||this.nextCode(f.contenedor);
+    const n={...f,codigoInterno,id:this.uid(),cajon:parseInt(f.cajon)||1,posicion:parseInt(f.posicion)||1,cantidad:parseInt(f.cantidad)||0};
+    
+    // Guardar en Supabase
+    try {
+      if(window.SupabaseClient) {
+        await window.SupabaseClient.create(n);
+      }
+    } catch (error) {
+      this.toast('error','Error al guardar en Supabase');
+      console.error(error);
+      return;
+    }
+    
     const u=[...(this.state.comps||[]),n];
-    this.persist(u);
-    this.setState({comps:u,form:{...f,codigoInterno:'',codigoFabricante:'',descripcion:'',notas:'',cantidad:0}});
-    this.toast('success','Componente agregado correctamente');
+    if(window.LabAuth) window.LabAuth.logUsage({type:'agregar',codigo:codigoInterno,descripcion:n.descripcion||n.codigoFabricante,tipo:n.tipo,cantidad:n.cantidad,contenedor:n.contenedor});
+    if(window.LabAuth&&window.LabAuth.logChange) window.LabAuth.logChange({type:'agregar',codigo:codigoInterno,descripcion:n.descripcion||n.codigoFabricante,tipo:n.tipo,cantidad:n.cantidad});
+    const base={...f,codigoFabricante:'',valor:'',descripcion:'',notas:'',cantidad:0};
+    this.setState({comps:u},()=>{
+      this.setState(s=>({
+        form:{...base,codigoInterno:this.nextCode(base.contenedor)},
+        view: go?'visual':s.view,
+        container: go?n.contenedor:s.container
+      }));
+    });
+    this.toast('success', go?`Guardado en ${this.getCT(n.contenedor)?.name||n.contenedor} · código ${codigoInterno}`:`Componente ${codigoInterno} agregado`);
   }
 
-  startEdit(id) {
+  startEdit(id){
     const c=(this.state.comps||[]).find(x=>x.id===id);
     if(c) this.setState({editId:id,form:{...c},view:'manage',modal:null});
   }
 
-  saveEdit() {
+  async saveEdit(){
     const {form,editId}=this.state;
     const u=(this.state.comps||[]).map(c=>c.id===editId?{...form,id:editId,cajon:parseInt(form.cajon)||1,posicion:parseInt(form.posicion)||1,cantidad:parseInt(form.cantidad)||0}:c);
-    this.persist(u); this.setState({comps:u,editId:null});
+    
+    // Actualizar en Supabase
+    try {
+      if(window.SupabaseClient) {
+        await window.SupabaseClient.update(editId, form);
+      }
+    } catch (error) {
+      this.toast('error','Error al actualizar en Supabase');
+      console.error(error);
+      return;
+    }
+    
+    if(window.LabAuth) window.LabAuth.logUsage({type:'modificar',codigo:form.codigoInterno,descripcion:form.descripcion||form.codigoFabricante,tipo:form.tipo,cantidad:parseInt(form.cantidad)||0,contenedor:form.contenedor});
+    if(window.LabAuth&&window.LabAuth.logChange) window.LabAuth.logChange({type:'modificar',codigo:form.codigoInterno,descripcion:form.descripcion||form.codigoFabricante,tipo:form.tipo,cantidad:parseInt(form.cantidad)||0});
+    this.setState({comps:u,editId:null});
     this.toast('success','Componente actualizado');
   }
 
-  cancelEdit() {
-    this.setState({editId:null,form:{codigoInterno:'',contenedor:'G1',cajon:1,posicion:1,tipo:'Resistencia',codigoFabricante:'',descripcion:'',cantidad:0,espacioOcupado:'Bajo',notas:''}});
+  cancelEdit(){
+    this.setState({editId:null,form:{codigoInterno:'',contenedor:'G1',cajon:1,posicion:1,tipo:'Resistencia',codigoFabricante:'',valor:'',descripcion:'',cantidad:0,espacioOcupado:'Bajo',notas:''}});
   }
 
-  del(id) {
+  async del(id){
+    const comp=(this.state.comps||[]).find(c=>c.id===id);
     const u=(this.state.comps||[]).filter(c=>c.id!==id);
-    this.persist(u); this.setState({comps:u,delId:null,modal:null});
+    
+    // Eliminar de Supabase
+    try {
+      if(window.SupabaseClient) {
+        await window.SupabaseClient.delete(id);
+      }
+    } catch (error) {
+      this.toast('error','Error al eliminar en Supabase');
+      console.error(error);
+      return;
+    }
+    
+    if(comp&&window.LabAuth) window.LabAuth.logUsage({type:'eliminar',codigo:comp.codigoInterno,descripcion:comp.descripcion||comp.codigoFabricante,tipo:comp.tipo,cantidad:comp.cantidad,contenedor:comp.contenedor});
+    if(comp&&window.LabAuth&&window.LabAuth.logChange) window.LabAuth.logChange({type:'eliminar',codigo:comp.codigoInterno,descripcion:comp.descripcion||comp.codigoFabricante,tipo:comp.tipo,cantidad:comp.cantidad});
+    this.setState({comps:u,delId:null,modal:null});
   }
 
-  toast(type,txt) {
+  openUse(id){
+    const c=(this.state.comps||[]).find(x=>x.id===id);
+    if(c) this.setState({useId:id,useQty:1,modal:null});
+  }
+  async confirmUse(){
+    const {useId,useQty}=this.state;
+    const comp=(this.state.comps||[]).find(c=>c.id===useId);
+    if(!comp) return;
+    const take=Math.max(1,Math.min(parseInt(useQty)||1, comp.cantidad||0));
+    const left=Math.max(0,(parseInt(comp.cantidad)||0)-take);
+    
+    // Actualizar o eliminar en Supabase
+    try {
+      if(window.SupabaseClient) {
+        if(left===0) {
+          await window.SupabaseClient.delete(useId);
+        } else {
+          await window.SupabaseClient.update(useId, {cantidad: left});
+        }
+      }
+    } catch (error) {
+      this.toast('error','Error al actualizar en Supabase');
+      console.error(error);
+      return;
+    }
+    
+    const u = left===0
+      ? (this.state.comps||[]).filter(c=>c.id!==useId)
+      : (this.state.comps||[]).map(c=>c.id===useId?{...c,cantidad:left}:c);
+    if(window.LabAuth) window.LabAuth.logUsage({type:'usar',codigo:comp.codigoInterno,descripcion:comp.descripcion||comp.codigoFabricante,tipo:comp.tipo,cantidad:take,contenedor:comp.contenedor});
+    if(window.LabAuth&&window.LabAuth.logChange) window.LabAuth.logChange({type:'usar',codigo:comp.codigoInterno,descripcion:comp.descripcion||comp.codigoFabricante,tipo:comp.tipo,cantidad:take});
+    this.setState({comps:u,useId:null});
+    this.toast('success', left===0?`Usaste las últimas ${take} · ${comp.codigoInterno} eliminado`:`Tomaste ${take} de ${comp.codigoInterno}`);
+  }
+
+  // ---------- nueva caja ----------
+  openNewBox(){ this.setState({showNewBox:true,boxForm:{name:'',type:'caja12',image:''},boxError:''}); }
+  onBoxImage(e){
+    const file=e.target.files&&e.target.files[0];
+    if(!file) return;
+    const r=new FileReader();
+    r.onload=ev=>this.setState(s=>({boxForm:{...s.boxForm,image:ev.target.result}}));
+    r.readAsDataURL(file);
+  }
+  addBox(){
+    const {boxForm}=this.state;
+    const name=(boxForm.name||'').trim();
+    if(!name){ this.setState({boxError:'Ponle un nombre a la caja'}); return; }
+    if(!boxForm.image){ this.setState({boxError:'Sube una imagen de la caja'}); return; }
+    const comp={gabinete:64,caja12:12,caja_libre:undefined}[boxForm.type];
+    const id='U'+Date.now().toString(36);
+    const box={id,name,type:boxForm.type,image:boxForm.image};
+    if(comp) box.compartments=comp;
+    const boxes=[...(this.state.customBoxes||[]),box];
+    this.persistBoxes(boxes);
+    this.setState({customBoxes:boxes,showNewBox:false,container:id,view:'visual'});
+    this.toast('success',`Caja "${name}" creada`);
+  }
+
+  toast(type,txt){
     this.setState({toast:{type,txt}});
-    setTimeout(()=>this.setState({toast:null}),3500);
+    clearTimeout(this._t);
+    this._t=setTimeout(()=>this.setState({toast:null}),3500);
   }
 
-  exportJSON() {
-    const d={v:'1.1',date:new Date().toISOString(),components:this.state.comps||[]};
+  exportJSON(){
+    const d={v:'1.1',date:new Date().toISOString(),components:this.state.comps||[],boxes:this.state.customBoxes||[]};
     const url=URL.createObjectURL(new Blob([JSON.stringify(d,null,2)],{type:'application/json'}));
     const a=Object.assign(document.createElement('a'),{href:url,download:`inventario_${new Date().toISOString().slice(0,10)}.json`});
     document.body.appendChild(a);a.click();document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
-
-  exportCSV() {
-    const cols=['codigoInterno','contenedor','cajon','posicion','tipo','codigoFabricante','descripcion','cantidad','espacioOcupado','notas'];
-    const hdr=['Código Interno','Contenedor','Cajón','Posición','Tipo','Código Fabricante','Descripción','Cantidad','Espacio','Notas'];
+  exportCSV(){
+    const cols=['codigoInterno','contenedor','cajon','posicion','tipo','valor','codigoFabricante','descripcion','cantidad','espacioOcupado','notas'];
+    const hdr=['Código Interno','Contenedor','Cajón','Posición','Tipo','Valor','Código Fabricante','Descripción','Cantidad','Espacio','Notas'];
     const rows=(this.state.comps||[]).map(c=>cols.map(k=>`"${String(c[k]??'').replace(/"/g,'""')}"`).join(','));
     const url=URL.createObjectURL(new Blob(['\uFEFF'+[hdr.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8;'}));
     const a=Object.assign(document.createElement('a'),{href:url,download:`inventario_${new Date().toISOString().slice(0,10)}.csv`});
@@ -631,43 +1130,109 @@ class Component extends DCLogic {
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
 
-  importJSON(file) {
+  async importJSON(file){
     const r=new FileReader();
-    r.onload=e=>{
-      try {
+    r.onload=async e=>{
+      try{
+        console.log('[importJSON] iniciando con', file.name);
         const d=JSON.parse(e.target.result);
         const cs=Array.isArray(d)?d:d.components;
-        if(!Array.isArray(cs))throw 0;
-        this.persist(cs); this.setState({comps:cs});
-        this.toast('success',`Importados ${cs.length} componentes`);
-      } catch(e){this.toast('error','Archivo JSON inválido');}
+        if(!Array.isArray(cs)) throw new Error('No es un array válido');
+        console.log('[importJSON] parseado:', cs.length, 'componentes');
+        
+        // normaliza para que cada componente tenga los campos esperados
+        const norm=cs.map(c=>({id:c.id||this.uid(),codigoInterno:c.codigoInterno||'',contenedor:c.contenedor||'G1',cajon:parseInt(c.cajon)||1,posicion:parseInt(c.posicion)||1,tipo:c.tipo||'Otro',codigoFabricante:c.codigoFabricante||'',valor:c.valor||'',descripcion:c.descripcion||'',cantidad:parseInt(c.cantidad)||0,espacioOcupado:c.espacioOcupado||'Bajo',notas:c.notas||''}));
+        
+        // Insertar cada componente en Supabase
+        const importedIds = [];
+        if(window.SupabaseClient){
+          try{
+            console.log('[importJSON] subiendo a Supabase...');
+            for(const comp of norm){
+              await window.SupabaseClient.create(comp);
+              importedIds.push(comp.id);
+            }
+            console.log('[importJSON] subidos:', importedIds.length);
+          }catch(err){
+            console.error('Error importando a Supabase:', err);
+            this.toast('error','Error al guardar en Supabase');
+            return;
+          }
+        }
+        
+        // Registrar el evento en el changelog
+        if(window.LabAuth&&window.LabAuth.logChange) window.LabAuth.logChange({type:'importar',codigo:'—',descripcion:'Importación de inventario ('+norm.length+' componentes)',tipo:'',cantidad:norm.length});
+        
+        // Recargar TODOS los componentes desde Supabase (asegurar sincronización)
+        let allComps = [];
+        if(window.SupabaseClient){
+          try{
+            console.log('[importJSON] recargando desde Supabase...');
+            allComps = await window.SupabaseClient.getAll();
+            console.log('[importJSON] recargados:', allComps.length, 'componentes totales');
+          }catch(err){
+            console.error('Error recargando componentes:', err);
+            allComps = norm; // fallback: al menos los nuevos
+          }
+        }
+        
+        const boxes=(d&&Array.isArray(d.boxes))?d.boxes:(this.state.customBoxes||[]);
+        this.persistBoxes(boxes);
+        console.log('[importJSON] actualizando estado...');
+        this.setState({comps:allComps,customBoxes:boxes});
+        this.toast('success',`Importados ${importedIds.length} componentes (total en BD: ${allComps.length})`);
+        console.log('[importJSON] completado!');
+      }catch(e){ 
+        console.error('[importJSON] error:', e);
+        this.toast('error','Archivo JSON inválido'); 
+      }
     };
     r.readAsText(file);
   }
 
-  sf(k){return e=>this.setState(s=>({form:{...s.form,[k]:e.target.value}}))}
+  sf(k){ return e=>this.setState(s=>({form:{...s.form,[k]:e.target.value}})); }
+  saf(k){ return e=>this.setState(s=>({authForm:{...s.authForm,[k]:e.target.value}})); }
 
-  renderVals() {
-    const {view,container,modal,filters,sort,form,editId,delId,toast}=this.state;
+  renderVals(){
+    const {view,container,modal,filters,sort,form,editId,delId,toast,session,authMode,authForm,authError,boxForm,boxError,useId,useQty}=this.state;
     const comps=this.state.comps||[];
-    const CTS=this.CONTAINERS, TIPOS=this.TIPOS, TC=this.TC;
+    const CTS=this.allBoxes(), TIPOS=this.TIPOS, TC=this.TC;
 
     const ct=this.getCT(container);
     const isG=ct?.type==='gabinete', isC12=ct?.type==='caja12', isCL=ct?.type==='caja_libre';
     const dCells=(isG||isC12)?this.cells(container):[];
-    const clItems=isCL?comps.filter(c=>c.contenedor===container).map(c=>this.enrich(c)):[];
+    const ctTotalDrawers=ct?.compartments||0;
+    const ctComps=comps.filter(c=>c.contenedor===container);
+    const ctOccupied=ctTotalDrawers?new Set(ctComps.map(c=>c.cajon)).size:0;
+    const ctUnits=ctComps.reduce((s,c)=>s+(parseInt(c.cantidad)||0),0);
+
+    let ctPct, ctPctLabel, ctPctSub;
+    if(ctTotalDrawers){
+      ctPct=Math.round(ctOccupied/ctTotalDrawers*100);
+      ctPctLabel = isG?'Gabinete utilizado':'Caja utilizada';
+      ctPctSub=`${ctOccupied} de ${ctTotalDrawers} cajones`;
+    } else {
+      const lvl={Bajo:0.34,Medio:0.67,Alto:1};
+      ctPct = ctComps.length ? Math.round(ctComps.reduce((s,c)=>s+(lvl[c.espacioOcupado]||0.34),0)/ctComps.length*100) : 0;
+      ctPctLabel='Caja utilizada';
+      ctPctSub='según el espacio ocupado';
+    }
+    const showColorLegend = isG||isC12;
+    const present={};
+    ctComps.forEach(c=>{ present[c.tipo]=this.TC[c.tipo]||'#64748B'; });
+    const legendTypes=Object.entries(present).map(([t,col])=>({t,col}));
 
     let mItems=[],mTitle='',mDrawer=null;
     if(modal){
-      if(modal.all){mItems=comps.filter(c=>c.contenedor===modal.cid).map(c=>this.enrich(c));mTitle=`${this.getCT(modal.cid)?.name} — Todo el contenido`;}
-      else{mItems=comps.filter(c=>c.contenedor===modal.cid&&c.cajon===modal.n).map(c=>this.enrich(c));mTitle=`${this.getCT(modal.cid)?.name} · Cajón ${modal.n}`;mDrawer=modal.n;}
+      if(modal.all){ mItems=comps.filter(c=>c.contenedor===modal.cid).map(c=>this.enrich(c)); mTitle=`${this.getCT(modal.cid)?.name} — Todo el contenido`; }
+      else{ mItems=comps.filter(c=>c.contenedor===modal.cid&&c.cajon===modal.n).map(c=>this.enrich(c)); mTitle=`${this.getCT(modal.cid)?.name} · Cajón ${modal.n}`; mDrawer=modal.n; }
     }
 
     const filt=this.filtered();
     const totalQty=comps.reduce((s,c)=>s+(parseInt(c.cantidad)||0),0);
     const occKeys=new Set(comps.map(c=>`${c.contenedor}-${c.cajon}`));
 
-    const byTipo={};TIPOS.forEach(t=>{byTipo[t]={count:0,qty:0};});
+    const byTipo={}; TIPOS.forEach(t=>{byTipo[t]={count:0,qty:0};});
     comps.forEach(c=>{const t=c.tipo||'Otro';if(!byTipo[t])byTipo[t]={count:0,qty:0};byTipo[t].count++;byTipo[t].qty+=parseInt(c.cantidad)||0;});
     const typeBars=Object.entries(byTipo).filter(([,v])=>v.count>0).sort((a,b)=>b[1].count-a[1].count).map(([t,d])=>({t,count:d.count,qty:d.qty,pct:0,col:TC[t]||'#64748B'}));
     const mx=typeBars.length?typeBars[0].count:1;
@@ -684,12 +1249,16 @@ class Component extends DCLogic {
       };
     });
 
+    const loggedIn=!!session;
     const NAV=[
       {label:'Vista Física',active:view==='visual',onClick:()=>this.setState({view:'visual'})},
       {label:'Inventario',active:view==='table',onClick:()=>this.setState({view:'table'})},
       {label:'Estadísticas',active:view==='stats',onClick:()=>this.setState({view:'stats'})},
-      {label:'+ Agregar',active:view==='manage',onClick:()=>this.setState(s=>({view:'manage',editId:null,form:{...s.form,codigoInterno:this.nextCode(s.form.contenedor)}}))},
-    ].map(n=>({...n,style:{padding:'6px 14px',borderRadius:'6px',border:'none',cursor:'pointer',fontSize:'13px',fontWeight:500,fontFamily:"'IBM Plex Sans',sans-serif",background:n.active?'rgba(255,255,255,0.14)':'transparent',color:n.active?'#ffffff':'#94A3B8'}}));
+      {label:'+ Agregar componente',active:view==='manage',onClick:()=>this.requireAuth(()=>this.setState(s=>({view:'manage',editId:null,form:{...s.form,codigoInterno:this.nextCode(s.form.contenedor)}})))}
+    ];
+    if(loggedIn) NAV.push({label:'Mi cuenta',active:view==='account',onClick:()=>this.setState({view:'account'})});
+    NAV.push({label:'Administrador',active:view==='admin',onClick:()=>this.openAdmin()});
+    const NAVm=NAV.map(n=>({...n,style:{padding:'6px 14px',borderRadius:'6px',border:'none',cursor:'pointer',fontSize:'13px',fontWeight:500,fontFamily:"'IBM Plex Sans',sans-serif",background:n.active?'rgba(255,255,255,0.14)':'transparent',color:n.active?'#ffffff':'#94A3B8'}}));
 
     const sortBy=col=>this.setState(s=>({sort:{col,dir:s.sort.col===col&&s.sort.dir==='asc'?'desc':'asc'}}));
     const si=col=>sort.col===col?(sort.dir==='asc'?' ↑':' ↓'):'';
@@ -698,17 +1267,65 @@ class Component extends DCLogic {
     const hasComp=formCT?.type!=='caja_libre';
     const delComp=delId?comps.find(c=>c.id===delId):null;
 
+    // mi cuenta / actividad
+    const TYPELBL={usar:'Usó',agregar:'Agregó',modificar:'Modificó',eliminar:'Eliminó',importar:'Importó'};
+    const TYPECLR={usar:'#2563EB',agregar:'#16A34A',modificar:'#D97706',eliminar:'#DC2626',importar:'#0891B2'};
+    const fmt=ts=>{ try{ return new Date(ts).toLocaleString('es',{day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(e){ return ts; } };
+    const dec=u=>{ const clr=TYPECLR[u.type]||'#64748B'; const tc=this.TC[u.tipo]||'#64748B';
+      return {...u, when:fmt(u.ts), typeLabel:TYPELBL[u.type]||u.type, typeColor:clr, typeBg:this.rgba(clr,0.1), tipoColor:tc, tipoBg:this.rgba(tc,0.1), tipoLabel:u.tipo||'—'}; };
+
+    const usage = loggedIn && window.LabAuth ? window.LabAuth.getUsage() : [];
+    const activity=usage.map(dec);
+    const myConsumed=activity.filter(u=>u.type==='usar');
+    const myAdmin=activity.filter(u=>u.type!=='usar');
+
+    // registro global de cambios (panel admin)
+    const changelog=(window.LabAuth&&window.LabAuth.getChangelog)?window.LabAuth.getChangelog():[];
+    const changelogRows=changelog.map(c=>{const clr=TYPECLR[c.type]||'#64748B';return {...c,when:fmt(c.ts),typeLabel:TYPELBL[c.type]||c.type,typeColor:clr,typeBg:this.rgba(clr,0.1),usuario:c.usuario||'Sistema'};});
+
+    // consumo global (todas las cuentas) — para "consumido por quién"
+    const allUse = (window.LabAuth && window.LabAuth.allUsage) ? window.LabAuth.allUsage() : [];
+    const consumedAll = allUse.filter(u=>u.type==='usar');
+    const consumedTotal = consumedAll.reduce((s,u)=>s+(parseInt(u.cantidad)||0),0);
+    const consumedDetail = consumedAll.map(dec);
+    // por tipo
+    const cTby={};
+    consumedAll.forEach(u=>{ const t=u.tipo||'Otro'; cTby[t]=(cTby[t]||0)+(parseInt(u.cantidad)||0); });
+    const consumedByType=Object.entries(cTby).sort((a,b)=>b[1]-a[1]).map(([t,q])=>({t,q,col:this.TC[t]||'#64748B',pct:0}));
+    const cMaxT=consumedByType.length?consumedByType[0].q:1; consumedByType.forEach(b=>b.pct=Math.round(b.q/cMaxT*100));
+    // por usuario
+    const cUby={};
+    consumedAll.forEach(u=>{ const n=u.usuario||u.email||'—'; cUby[n]=(cUby[n]||0)+(parseInt(u.cantidad)||0); });
+    const consumedByUser=Object.entries(cUby).sort((a,b)=>b[1]-a[1]).map(([n,q])=>({n,q,pct:0,initial:(n||'?').charAt(0).toUpperCase()}));
+    const cMaxU=consumedByUser.length?consumedByUser[0].q:1; consumedByUser.forEach(b=>b.pct=Math.round(b.q/cMaxU*100));
+
+    // nueva caja
+    const boxTypes=[{key:'gabinete',label:'Gabinete · 64 cajones'},{key:'caja12',label:'Caja · 12 compartimentos'},{key:'caja_libre',label:'Caja libre · sin divisiones'}];
+    const boxTypeBtns=boxTypes.map(bt=>{const sel=boxForm.type===bt.key;return{label:bt.label,onClick:()=>this.setState(s=>({boxForm:{...s.boxForm,type:bt.key}})),
+      style:{textAlign:'left',padding:'10px 12px',borderRadius:'8px',border:`1px solid ${sel?'#2563EB':'#E2E8F0'}`,background:sel?'#EFF6FF':'white',color:sel?'#2563EB':'#374151',cursor:'pointer',fontSize:'13px',fontWeight:sel?600:500,fontFamily:"'IBM Plex Sans',sans-serif"}};});
+
+    // usar
+    const useComp=useId?comps.find(c=>c.id===useId):null;
+
+    // auth tabs
+    const tabBase={flex:1,padding:'8px',borderRadius:'7px',border:'none',cursor:'pointer',fontSize:'13px',fontWeight:600,fontFamily:"'IBM Plex Sans',sans-serif"};
+    const authLoginTabStyle={...tabBase,background:authMode==='login'?'white':'transparent',color:authMode==='login'?'#0F172A':'#64748B',boxShadow:authMode==='login'?'0 1px 2px rgba(0,0,0,0.08)':'none'};
+    const authRegTabStyle={...tabBase,background:authMode==='register'?'white':'transparent',color:authMode==='register'?'#0F172A':'#64748B',boxShadow:authMode==='register'?'0 1px 2px rgba(0,0,0,0.08)':'none'};
+
     return {
-      isVisual:view==='visual',isTable:view==='table',isStats:view==='stats',isManage:view==='manage',
-      NAV,ctTabs,ctImage:ct?.image||'',ctName:ct?.name||'',ctCompCount:comps.filter(c=>c.contenedor===container).length,
-      isG,isC12,isCL,isC3:container==='C3',isC4:container==='C4',dCells,
-      clItems,clCount:clItems.length,clText:`${clItems.length} componente${clItems.length!==1?'s':''}`,
+      isVisual:view==='visual',isTable:view==='table',isStats:view==='stats',isManage:view==='manage',isAccount:view==='account'&&loggedIn,isAdmin:view==='admin'&&this.state.adminAuth,
+      NAV:NAVm,ctTabs,onNewBox:()=>this.requireAuth(()=>this.openNewBox()),
+      ctImage:ct?.image||'',ctName:ct?.name||'',ctCompCount:ctComps.length,
+      ctHint: (isG||isC12)?'Haz clic en un cajón para ver su contenido · los cajones coloreados tienen componentes':'Esta caja no tiene compartimentos · consulta su contenido abajo',
+      ctTotalDrawers,ctOccupied,ctUnits,ctPct,ctPctLabel,ctPctSub,
+      showColorLegend,legendTypes,hasLegendTypes:legendTypes.length>0,noLegendTypes:legendTypes.length===0,
+      isG,isC12,isCL,dCells,
       onCLView:()=>this.setState({modal:{cid:container,all:true}}),
       showModal:!!modal,mItems,mTitle,mEmpty:mItems.length===0,mHasItems:mItems.length>0,
       mSubtitle:mItems.length===0?'Sin componentes registrados':`${mItems.length} componente${mItems.length!==1?'s':''}`,
       mDrawer,stopProp:e=>e.stopPropagation(),
       onCloseModal:()=>this.setState({modal:null}),
-      onAddToDrawer:()=>{if(mDrawer)this.setState(s=>({form:{...s.form,contenedor:modal.cid,cajon:mDrawer},view:'manage',modal:null,editId:null}));},
+      onAddToDrawer:()=>{ if(mDrawer) this.requireAuth(()=>this.setState(s=>({form:{...s.form,contenedor:modal.cid,cajon:mDrawer,codigoInterno:this.nextCode(modal.cid)},view:'manage',modal:null,editId:null}))); },
       filt,filtCount:filt.length,total:comps.length,
       filterTipo:filters.tipo,filterCont:filters.cont,filterQ:filters.q,
       tipos:TIPOS,cts:CTS,
@@ -720,7 +1337,7 @@ class Component extends DCLogic {
       sCodeHdr:`CÓDIGO${si('codigoInterno')}`,sTipoHdr:`TIPO${si('tipo')}`,
       sDescHdr:`DESCRIPCIÓN${si('descripcion')}`,sQtyHdr:`CANT.${si('cantidad')}`,sContHdr:`CONTENEDOR${si('contenedor')}`,
       onSCode:()=>sortBy('codigoInterno'),onSTipo:()=>sortBy('tipo'),onSDesc:()=>sortBy('descripcion'),onSQty:()=>sortBy('cantidad'),onSCont:()=>sortBy('contenedor'),
-      totalComps:comps.length,totalQty,occupied:occKeys.size,totalDrawers:CTS.reduce((s,c)=>s+(c.compartments||0),0),
+      totalComps:comps.length,totalQty,occupied:occKeys.size,totalDrawers:this.CONTAINERS.reduce((s,c)=>s+(c.compartments||0),0)+((this.state.customBoxes||[]).reduce((s,c)=>s+(c.compartments||0),0)),
       typeBars,ctCards,
       cajonButtons: hasComp ? Array.from({length:formCT?.compartments||64},(_,i)=>{
         const n=i+1, sel=parseInt(form.cajon)===n;
@@ -731,15 +1348,55 @@ class Component extends DCLogic {
       cajonGridCols: formCT?.type==='gabinete'?8:6,
       form,isEditing:!!editId,isNotEditing:!editId,hasComp,
       formTitle:editId?'Editar componente':'Agregar componente',
-      oFCI:this.sf('codigoInterno'),oFCon:e=>{const c=e.target.value;this.setState(s=>({form:{...s.form,contenedor:c,codigoInterno:s.form.codigoInterno||this.nextCode(c)}}));},oFCaj:this.sf('cajon'),oFPos:this.sf('posicion'),
-      oFTip:this.sf('tipo'),oFFab:this.sf('codigoFabricante'),oFDes:this.sf('descripcion'),
+      oFCon:e=>{const c=e.target.value;this.setState(s=>({form:{...s.form,contenedor:c,cajon:1,codigoInterno:this.nextCode(c)}}));},
+      oFTip:this.sf('tipo'),oFFab:this.sf('codigoFabricante'),oFDes:this.sf('descripcion'),oFVal:this.sf('valor'),
       oFQty:this.sf('cantidad'),oFEsp:this.sf('espacioOcupado'),oFNot:this.sf('notas'),
-      onAdd:()=>this.add(),onSave:()=>this.saveEdit(),onCancel:()=>this.cancelEdit(),
+      onAddStay:()=>this.add(false),onAddGo:()=>this.add(true),onSave:()=>this.saveEdit(),onCancel:()=>this.cancelEdit(),
       showDel:!!delId,delDesc:delComp?`${delComp.codigoInterno} — ${delComp.descripcion}`:'',
       onConfDel:()=>delId&&this.del(delId),onCancelDel:()=>this.setState({delId:null}),
       onExportJSON:()=>this.exportJSON(),onExportCSV:()=>this.exportCSV(),
-      onImport:e=>{if(e.target.files[0])this.importJSON(e.target.files[0]);e.target.value='';},
-      showToast:!!toast,toastMsg:toast?.txt||'',toastBg:toast?.type==='success'?'#16A34A':'#DC2626'
+      onImport:e=>{const file=e.target.files&&e.target.files[0];e.target.value='';if(!file)return;this.requireAuth(()=>this.importJSON(file));},
+      // sesión
+      loggedIn,loggedOut:!loggedIn,
+      userName:session?.nombre||'',userEmail:session?.email||'',userInitial:(session?.nombre||'?').trim().charAt(0).toUpperCase(),
+      onLogout:()=>this.doLogout(),
+      onOpenLogin:()=>this.setState({authModal:true,authMode:'login',authError:'',authForm:{nombre:'',email:'',password:''},pendingAction:null,showPwd:false}),
+      // auth modal
+      authModalOpen:!!this.state.authModal,authIsLogin:authMode==='login',authIsRegister:authMode==='register',
+      authTitle:authMode==='login'?'Iniciar sesión':'Crear una cuenta',authSubmitLabel:authMode==='login'?'Entrar':'Crear cuenta y entrar',
+      authName:authForm.nombre,authEmail:authForm.email,authPassword:authForm.password,authError,authHasError:!!authError,
+      authLoginTabStyle,authRegTabStyle,
+      pwdType:this.state.showPwd?'text':'password',pwdBtnLabel:this.state.showPwd?'Ocultar':'Ver',
+      onTogglePwd:()=>this.setState(s=>({showPwd:!s.showPwd})),
+      onAuthName:this.saf('nombre'),onAuthEmail:this.saf('email'),onAuthPassword:this.saf('password'),
+      onSwitchLogin:()=>this.setState({authMode:'login',authError:''}),onSwitchRegister:()=>this.setState({authMode:'register',authError:''}),
+      onAuthSubmit:()=>this.doAuth(),onCloseAuth:()=>this.setState({authModal:false,authError:''}),
+      // mi cuenta
+      activityCount:activity.length,
+      myConsumed,hasMyConsumed:myConsumed.length>0,noMyConsumed:myConsumed.length===0,
+      myAdmin,hasMyAdmin:myAdmin.length>0,noMyAdmin:myAdmin.length===0,
+      consumedTotal,consumedTypesCount:consumedByType.length,
+      consumedByType,hasConsumedByType:consumedByType.length>0,
+      consumedByUser,hasConsumedByUser:consumedByUser.length>0,
+      consumedDetail,hasConsumedDetail:consumedDetail.length>0,noConsumedDetail:consumedDetail.length===0,
+      onLogoutAccount:()=>this.doLogout(),
+      // nueva caja
+      showNewBox:!!this.state.showNewBox,boxName:boxForm.name,boxTypeBtns,
+      boxImage:boxForm.image,boxHasImage:!!boxForm.image,boxImageBtnLabel:boxForm.image?'Cambiar imagen':'Subir imagen',
+      boxError,boxHasError:!!boxError,
+      onBoxName:e=>this.setState(s=>({boxForm:{...s.boxForm,name:e.target.value}})),
+      onBoxImage:e=>this.onBoxImage(e),onCreateBox:()=>this.addBox(),onCancelBox:()=>this.setState({showNewBox:false}),
+      // usar
+      showUse:!!useId,useDesc:useComp?`${useComp.codigoInterno} — ${useComp.descripcion||useComp.codigoFabricante}`:'',
+      useMax:useComp?useComp.cantidad:0,useQty,
+      onUseQty:e=>this.setState({useQty:e.target.value}),onConfirmUse:()=>this.confirmUse(),onCancelUse:()=>this.setState({useId:null}),
+      // toast
+      showToast:!!toast,toastMsg:toast?.txt||'',toastBg:toast?.type==='success'?'#16A34A':'#DC2626',
+      // admin
+      adminModalOpen:!!this.state.adminModal,adminUser:this.state.adminForm.user,adminPass:this.state.adminForm.pass,adminError:this.state.adminError,adminHasError:!!this.state.adminError,
+      onAdminUser:this.sadm('user'),onAdminPass:this.sadm('pass'),onAdminSubmit:()=>this.doAdminLogin(),onCloseAdmin:()=>this.setState({adminModal:false,adminError:''}),onAdminLogout:()=>this.adminLogout(),
+      onAdminImport:async e=>{const file=e.target.files&&e.target.files[0];e.target.value='';if(file)await this.importJSON(file);},
+      changelogRows,hasChangelog:changelogRows.length>0,noChangelog:changelogRows.length===0
     };
   }
 }
