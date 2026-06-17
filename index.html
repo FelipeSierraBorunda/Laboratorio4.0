@@ -75,14 +75,6 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
           </button>
         </sc-for>
         <button onClick="{{ onNewBox }}" style="padding:8px 16px;border-radius:8px;border:1px dashed #94A3B8;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#475569;font-family:'IBM Plex Sans',sans-serif;display:flex;align-items:center;gap:6px;" style-hover="border-color:#2563EB!important;color:#2563EB!important;background:#EFF6FF!important;">+ Nueva caja</button>
-        <sc-if value="{{ loggedIn }}" hint-placeholder-val="{{ false }}">
-          <sc-if value="{{ adminAuth }}" hint-placeholder-val="{{ false }}">
-            <button onClick="{{ onAdminLogout }}" style="padding:8px 16px;border-radius:8px;border:1px solid #FCD34D;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#B45309;font-family:'IBM Plex Sans',sans-serif;display:flex;align-items:center;gap:6px;" style-hover="border-color:#B45309!important;background:#FFFBEB!important;">Salir de admin</button>
-          </sc-if>
-          <sc-if value="{{ adminAuth }}" hint-placeholder-val="{{ true }}">
-            <button onClick="{{ onOpenAdminModal }}" style="padding:8px 16px;border-radius:8px;border:1px solid #DBEAFE;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#1D4ED8;font-family:'IBM Plex Sans',sans-serif;display:flex;align-items:center;gap:6px;" style-hover="border-color:#1D4ED8!important;background:#EFF6FF!important;">Convertir en admin</button>
-          </sc-if>
-        </sc-if>
       </div>
       <div style="background:white;border-radius:12px;border:1px solid #E2E8F0;padding:24px;">
         <h2 style="font-size:16px;font-weight:700;color:#0F172A;margin-bottom:4px;">{{ ctName }}</h2>
@@ -411,7 +403,7 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
         <sc-if value="{{ adminAuth }}" hint-placeholder-val="{{ false }}">
           <button onClick="{{ onAdminLogout }}" style="padding:10px 18px;border:1px solid #FCD34D;border-radius:8px;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#B45309;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#FFFBEB!important;">Salir de admin</button>
         </sc-if>
-        <sc-if value="{{ adminAuth }}" hint-placeholder-val="{{ true }}">
+        <sc-if value="{{ !adminAuth }}" hint-placeholder-val="{{ true }}">
           <button onClick="{{ onOpenAdminModal }}" style="padding:10px 18px;border:1px solid #DBEAFE;border-radius:8px;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#1D4ED8;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#EFF6FF!important;">Convertir en admin</button>
         </sc-if>
       </div>
@@ -1410,6 +1402,7 @@ class Component extends DCLogic {
       // admin
       adminModalOpen:!!this.state.adminModal,adminUser:this.state.adminForm.user,adminPass:this.state.adminForm.pass,adminError:this.state.adminError,adminHasError:!!this.state.adminError,
       onAdminUser:this.sadm('user'),onAdminPass:this.sadm('pass'),onAdminSubmit:()=>this.doAdminLogin(),onCloseAdmin:()=>this.setState({adminModal:false,adminError:''}),onAdminLogout:()=>this.adminLogout(),
+      onOpenAdminModal:()=>this.openAdmin(),
       onAdminImport:async e=>{const file=e.target.files&&e.target.files[0];e.target.value='';if(file)await this.importJSON(file);},
       changelogRows,hasChangelog:changelogRows.length>0,noChangelog:changelogRows.length===0
     };
