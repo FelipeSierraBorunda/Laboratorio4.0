@@ -89,7 +89,21 @@
 
     async login({ email, password }) {
       email = (email || '').trim().toLowerCase();
-      const acc = _accounts[email];
+      let acc = _accounts[email];
+      
+      // Si no está en caché, cargar desde Supabase
+      if (!acc && sb()) {
+        try {
+          const users = await sb().select('usuarios', { filter: `email=eq.${email}` });
+          if (users && users.length > 0) {
+            acc = users[0];
+            _accounts[email] = acc; // guardar en caché
+          }
+        } catch (e) {
+          console.error('[auth] login - error cargando usuario:', e);
+        }
+      }
+      
       if (!acc || acc.pass !== hash(password || '')) return { ok: false, error: 'Correo o contraseña incorrectos' };
       _session = { email: acc.email, nombre: acc.nombre };
       try { localStorage.setItem(SESSION_KEY, JSON.stringify(acc.email)); } catch (e) {}
