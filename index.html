@@ -114,7 +114,7 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
         <sc-if value="{{ isC12 }}" hint-placeholder-val="{{ false }}">
           <div style="display:grid;grid-template-columns:1fr 2fr;gap:28px;align-items:start;">
             <sc-if value="{{ ctImage }}" hint-placeholder-val="{{ false }}">
-              <img style="width:100%;aspect-ratio:1/1.05;border-radius:8px;border:1px solid #E2E8F0;object-fit:cover;background:#F8FAFC;" alt="imagen contenedor" />
+              <img src="{{ ctImage }}" style="width:100%;aspect-ratio:1/1.05;border-radius:8px;border:1px solid #E2E8F0;object-fit:cover;background:#F8FAFC;" alt="imagen contenedor" />
             </sc-if>
             <div>
               <p style="font-size:13px;color:#64748B;margin-bottom:16px;">Haz clic en un compartimento para ver su contenido:</p>
@@ -139,7 +139,7 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
         <sc-if value="{{ isCL }}" hint-placeholder-val="{{ false }}">
           <div style="display:grid;grid-template-columns:1fr 2fr;gap:32px;align-items:start;">
             <sc-if value="{{ ctImage }}" hint-placeholder-val="{{ false }}">
-              <img style="width:100%;aspect-ratio:1/0.92;border-radius:8px;border:1px solid #E2E8F0;object-fit:cover;background:#F8FAFC;" alt="imagen contenedor" />
+              <img src="{{ ctImage }}" style="width:100%;aspect-ratio:1/0.92;border-radius:8px;border:1px solid #E2E8F0;object-fit:cover;background:#F8FAFC;" alt="imagen contenedor" />
             </sc-if>
             <div style="display:flex;flex-direction:column;gap:12px;padding-top:8px;">
               <p style="font-size:14px;color:#64748B;line-height:1.7;">Caja sin compartimentos. Todos los componentes están en el interior sin división interna. Consulta las estadísticas abajo.</p>
@@ -699,7 +699,7 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
       <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:8px;">Imagen *</label>
       <div style="display:flex;gap:14px;align-items:center;margin-bottom:8px;">
         <sc-if value="{{ boxHasImage }}" hint-placeholder-val="{{ false }}">
-          <img style="width:72px;height:72px;border-radius:8px;object-fit:contain;background:#F8FAFC;border:1px solid #E2E8F0;flex-shrink:0;" alt="imagen caja" />
+          <img src="{{ boxImage }}" style="width:72px;height:72px;border-radius:8px;object-fit:contain;background:#F8FAFC;border:1px solid #E2E8F0;flex-shrink:0;" alt="imagen caja" />
         </sc-if>
         <label style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;background:#F1F5F9;border:1px solid #E2E8F0;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;color:#475569;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#E2E8F0!important;">
           {{ boxImageBtnLabel }}
@@ -1137,7 +1137,7 @@ class Component extends DCLogic {
         console.log('[importJSON] parseado:', cs.length, 'componentes');
         
         // normaliza para que cada componente tenga los campos esperados
-        const norm=cs.map(c=>({id:c.id||this.uid(),codigoInterno:c.codigoInterno||'',contenedor:c.contenedor||'G1',cajon:parseInt(c.cajon)||1,posicion:parseInt(c.posicion)||1,tipo:c.tipo||'Otro',codigoFabricante:c.codigoFabricante||'',valor:c.valor||'',descripcion:c.descripcion||'',cantidad:parseInt(c.cantidad)||0,espacioOcupado:c.espacioOcupado||'Bajo',notas:c.notas||''}));
+        const norm=cs.map(c=>({id:c.id||this.uid(),codigoInterno:c.codigoInterno||'',contenedor:c.contenedor||'G1',cajon:parseInt(c.cajon)||1,posicion:parseInt(c.posicion)||1,tipo:c.tipo||'Otro',codigoFabricante:c.codigoFabricante||'',descripcion:c.descripcion||'',cantidad:parseInt(c.cantidad)||0,espacioOcupado:c.espacioOcupado||'Bajo',notas:c.notas||''}));
         
         // Insertar cada componente en Supabase
         const importedIds = [];
