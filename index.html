@@ -915,6 +915,7 @@ class Component extends DCLogic {
     const ct=this.getCT(cid);
     if(!ct||!ct.compartments) return [];
     const comps=this.state.comps||[];
+    console.log('[cells] cid:', cid, 'ct:', ct?.name, 'comps.length:', comps.length, 'compartments:', ct.compartments);
     return Array.from({length:ct.compartments},(_,i)=>{
       const n=i+1;
       const its=comps.filter(c=>c.contenedor===cid&&c.cajon===n);
