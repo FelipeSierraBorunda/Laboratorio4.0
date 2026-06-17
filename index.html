@@ -1142,7 +1142,26 @@ class Component extends DCLogic {
         console.log('[importJSON] parseado:', cs.length, 'componentes');
         
         // normaliza para que cada componente tenga los campos esperados
-        const norm=cs.map(c=>({id:c.id||this.uid(),codigoInterno:c.codigoInterno||'',contenedor:c.contenedor||'G1',cajon:parseInt(c.cajon)||1,posicion:parseInt(c.posicion)||1,tipo:c.tipo||'Otro',codigoFabricante:c.codigoFabricante||'',descripcion:c.descripcion||'',cantidad:parseInt(c.cantidad)||0,espacioOcupado:c.espacioOcupado||'Bajo',notas:c.notas||''}));
+        const norm=cs.map(c=>{
+          // Convertir nombre de contenedor a ID si es necesario
+          let ct = c.contenedor || 'G1';
+          const ctObj = this.CONTAINERS.find(x => x.name === ct || x.id === ct);
+          ct = ctObj ? ctObj.id : ct;
+          
+          return {
+            id:c.id||this.uid(),
+            codigoInterno:c.codigoInterno||'',
+            contenedor:ct,
+            cajon:parseInt(c.cajon)||1,
+            posicion:parseInt(c.posicion)||1,
+            tipo:c.tipo||'Otro',
+            codigoFabricante:c.codigoFabricante||'',
+            descripcion:c.descripcion||'',
+            cantidad:parseInt(c.cantidad)||0,
+            espacioOcupado:c.espacioOcupado||'Bajo',
+            notas:c.notas||''
+          };
+        });
         
         // Insertar cada componente en Supabase
         const importedIds = [];
