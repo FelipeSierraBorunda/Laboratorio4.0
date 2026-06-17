@@ -852,7 +852,7 @@ class Component extends DCLogic {
     let adminAuth=false; try{ adminAuth = localStorage.getItem('li_admin')==='1'; }catch(e){}
     
     console.log('[componentDidMount] seteando estado con', comps.length, 'componentes');
-    this.setState({comps, customBoxes:boxes, session, adminAuth}, () => {
+    this.setState({comps, customBoxes:boxes, session, adminAuth, isLoading: false}, () => {
       console.log('[componentDidMount] estado actualizado, forzando repaint');
       this.forceUpdate();
     });
@@ -1196,8 +1196,12 @@ class Component extends DCLogic {
   saf(k){ return e=>this.setState(s=>({authForm:{...s.authForm,[k]:e.target.value}})); }
 
   renderVals(){
-    const {view,container,modal,filters,sort,form,editId,delId,toast,session,authMode,authForm,authError,boxForm,boxError,useId,useQty}=this.state;
+    const {view,container,modal,filters,sort,form,editId,delId,toast,session,authMode,authForm,authError,boxForm,boxError,useId,useQty,isLoading}=this.state;
     const comps=this.state.comps||[];
+    
+    // No renderizar hasta que los datos estén cargados
+    if(isLoading) return {isLoading: true, loadingMsg: 'Cargando componentes...'};
+    
     const CTS=this.allBoxes(), TIPOS=this.TIPOS, TC=this.TC;
 
     const ct=this.getCT(container);
