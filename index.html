@@ -491,10 +491,6 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
             </select>
           </div>
           <div>
-            <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Valor <span style="font-weight:400;color:#94A3B8;">· Ω, V, F, etc.</span></label>
-            <input type="text" value="{{ form.valor }}" onChange="{{ oFVal }}" placeholder="10kΩ · 25V · 100nF" style="width:100%;padding:9px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;font-family:'IBM Plex Mono',monospace;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
-          </div>
-          <div>
             <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Descripción</label>
             <input type="text" value="{{ form.descripcion }}" onChange="{{ oFDes }}" placeholder="Descripción legible en español" style="width:100%;padding:9px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:13px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
           </div>
@@ -813,7 +809,7 @@ class Component extends DCLogic {
     view:'visual', container:'G1', modal:null, editId:null, delId:null,
     filters:{tipo:'',cont:'',q:''},
     sort:{col:'codigoInterno',dir:'asc'},
-    form:{codigoInterno:'',contenedor:'G1',cajon:1,posicion:1,tipo:'Resistencia',codigoFabricante:'',valor:'',descripcion:'',cantidad:0,espacioOcupado:'Bajo',notas:''},
+    form:{codigoInterno:'',contenedor:'G1',cajon:1,posicion:1,tipo:'Resistencia',codigoFabricante:'',descripcion:'',cantidad:0,espacioOcupado:'Bajo',notas:''},
     comps:null, toast:null, customBoxes:[],
     session:null,
     authModal:false, authMode:'login', authForm:{nombre:'',email:'',password:''}, authError:'', pendingAction:null, showPwd:false,
@@ -987,7 +983,7 @@ class Component extends DCLogic {
     const u=[...(this.state.comps||[]),n];
     if(window.LabAuth) window.LabAuth.logUsage({type:'agregar',codigo:codigoInterno,descripcion:n.descripcion||n.codigoFabricante,tipo:n.tipo,cantidad:n.cantidad,contenedor:n.contenedor});
     if(window.LabAuth&&window.LabAuth.logChange) window.LabAuth.logChange({type:'agregar',codigo:codigoInterno,descripcion:n.descripcion||n.codigoFabricante,tipo:n.tipo,cantidad:n.cantidad});
-    const base={...f,codigoFabricante:'',valor:'',descripcion:'',notas:'',cantidad:0};
+    const base={...f,codigoFabricante:'',descripcion:'',notas:'',cantidad:0};
     this.setState({comps:u},()=>{
       this.setState(s=>({
         form:{...base,codigoInterno:this.nextCode(base.contenedor)},
@@ -1025,7 +1021,7 @@ class Component extends DCLogic {
   }
 
   cancelEdit(){
-    this.setState({editId:null,form:{codigoInterno:'',contenedor:'G1',cajon:1,posicion:1,tipo:'Resistencia',codigoFabricante:'',valor:'',descripcion:'',cantidad:0,espacioOcupado:'Bajo',notas:''}});
+    this.setState({editId:null,form:{codigoInterno:'',contenedor:'G1',cajon:1,posicion:1,tipo:'Resistencia',codigoFabricante:'',descripcion:'',cantidad:0,espacioOcupado:'Bajo',notas:''}});
   }
 
   async del(id){
@@ -1121,8 +1117,8 @@ class Component extends DCLogic {
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
   exportCSV(){
-    const cols=['codigoInterno','contenedor','cajon','posicion','tipo','valor','codigoFabricante','descripcion','cantidad','espacioOcupado','notas'];
-    const hdr=['Código Interno','Contenedor','Cajón','Posición','Tipo','Valor','Código Fabricante','Descripción','Cantidad','Espacio','Notas'];
+    const cols=['codigoInterno','contenedor','cajon','posicion','tipo','codigoFabricante','descripcion','cantidad','espacioOcupado','notas'];
+    const hdr=['Código Interno','Contenedor','Cajón','Posición','Tipo','Código Fabricante','Descripción','Cantidad','Espacio','Notas'];
     const rows=(this.state.comps||[]).map(c=>cols.map(k=>`"${String(c[k]??'').replace(/"/g,'""')}"`).join(','));
     const url=URL.createObjectURL(new Blob(['\uFEFF'+[hdr.join(','),...rows].join('\n')],{type:'text/csv;charset=utf-8;'}));
     const a=Object.assign(document.createElement('a'),{href:url,download:`inventario_${new Date().toISOString().slice(0,10)}.csv`});
@@ -1349,7 +1345,7 @@ class Component extends DCLogic {
       form,isEditing:!!editId,isNotEditing:!editId,hasComp,
       formTitle:editId?'Editar componente':'Agregar componente',
       oFCon:e=>{const c=e.target.value;this.setState(s=>({form:{...s.form,contenedor:c,cajon:1,codigoInterno:this.nextCode(c)}}));},
-      oFTip:this.sf('tipo'),oFFab:this.sf('codigoFabricante'),oFDes:this.sf('descripcion'),oFVal:this.sf('valor'),
+      oFTip:this.sf('tipo'),oFFab:this.sf('codigoFabricante'),oFDes:this.sf('descripcion'),
       oFQty:this.sf('cantidad'),oFEsp:this.sf('espacioOcupado'),oFNot:this.sf('notas'),
       onAddStay:()=>this.add(false),onAddGo:()=>this.add(true),onSave:()=>this.saveEdit(),onCancel:()=>this.cancelEdit(),
       showDel:!!delId,delDesc:delComp?`${delComp.codigoInterno} — ${delComp.descripcion}`:'',
