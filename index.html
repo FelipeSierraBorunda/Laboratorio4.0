@@ -22,7 +22,22 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
 
 <div style="min-height:100vh;display:flex;flex-direction:column;background:#F1F5F9;">
 
-<header style="background:#0F172A;height:54px;display:flex;align-items:center;padding:0 20px;gap:20px;position:sticky;top:0;z-index:100;flex-shrink:0;">
+<!-- OVERLAY DE IMPORTACIÓN -->
+<sc-if value="{{ isImporting }}" hint-placeholder-val="{{ false }}">
+  <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1000;">
+    <div style="background:white;border-radius:12px;padding:32px;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center;max-width:400px;">
+      <h3 style="font-size:18px;font-weight:700;color:#0F172A;margin-bottom:16px;">Importando componentes</h3>
+      <div style="background:#F1F5F9;border-radius:8px;overflow:hidden;height:8px;margin-bottom:16px;">
+        <div style="background:#2563EB;height:100%;width:{{ importPct }}%;transition:width 0.3s ease;"></div>
+      </div>
+      <p style="font-size:14px;color:#64748B;margin-bottom:8px;">{{ importProgress }} de {{ importTotal }} componentes</p>
+      <p style="font-size:12px;color:#94A3B8;">{{ importPct }}%</p>
+    </div>
+  </div>
+</sc-if>
+
+<header style="background:#0F172A;height:54px;display:flex;align-items:center;padding:0 20px;gap:20px;position:sticky;top:0;z-index:100;flex-shrink:0;opacity:{{ isImporting ? 0.6 : 1 }};pointer-events:{{ isImporting ? 'none' : 'auto' }};">
+
   <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
     <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
       <rect x="5" y="5" width="12" height="12" rx="1.5" stroke="#60A5FA" stroke-width="1.5"/>
@@ -401,6 +416,12 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
           <div style="font-size:11px;color:#94A3B8;text-transform:uppercase;letter-spacing:0.05em;">acciones registradas</div>
         </div>
         <button onClick="{{ onLogoutAccount }}" style="padding:10px 18px;border:1px solid #FEE2E2;border-radius:8px;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#DC2626;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#FEF2F2!important;">Cerrar sesión</button>
+        <sc-if value="{{ adminAuth }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ onAdminLogout }}" style="padding:10px 18px;border:1px solid #FCD34D;border-radius:8px;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#B45309;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#FFFBEB!important;">Salir de admin</button>
+        </sc-if>
+        <sc-if value="{{ adminAuth }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ onOpenAdminModal }}" style="padding:10px 18px;border:1px solid #DBEAFE;border-radius:8px;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#1D4ED8;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#EFF6FF!important;">Convertir en admin</button>
+        </sc-if>
       </div>
 
       <!-- Dos secciones: consumidos / administrativos -->
@@ -750,16 +771,14 @@ body{background:#F1F5F9;font-family:'IBM Plex Sans',system-ui,sans-serif;color:#
 <sc-if value="{{ adminModalOpen }}" hint-placeholder-val="{{ false }}">
   <div style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;" onClick="{{ onCloseAdmin }}">
     <div style="background:white;border-radius:14px;padding:28px;max-width:400px;width:100%;" onClick="{{ stopProp }}">
-      <h3 style="font-size:18px;font-weight:700;color:#0F172A;margin-bottom:6px;">Acceso de administrador</h3>
-      <p style="font-size:13px;color:#64748B;margin-bottom:20px;">Ingresa las credenciales de administrador para gestionar el inventario.</p>
-      <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Usuario</label>
-      <input type="text" value="{{ adminUser }}" onChange="{{ onAdminUser }}" placeholder="admin" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;margin-bottom:14px;" style-focus="border-color:#2563EB!important;" />
-      <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Contraseña</label>
-      <input type="password" value="{{ adminPass }}" onChange="{{ onAdminPass }}" placeholder="••••" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
+      <h3 style="font-size:18px;font-weight:700;color:#0F172A;margin-bottom:6px;">Convertir en administrador</h3>
+      <p style="font-size:13px;color:#64748B;margin-bottom:20px;">Establece una contraseña para convertir esta cuenta en administrador. Los cambios que hagas se registrarán con tu nombre.</p>
+      <label style="display:block;font-size:12px;font-weight:600;color:#374151;margin-bottom:6px;">Contraseña de administrador</label>
+      <input type="password" value="{{ adminPassword }}" onChange="{{ onAdminPassword }}" placeholder="••••" style="width:100%;padding:10px 12px;border:1px solid #E2E8F0;border-radius:8px;font-size:14px;font-family:'IBM Plex Sans',sans-serif;color:#0F172A;outline:none;" style-focus="border-color:#2563EB!important;" />
       <sc-if value="{{ adminHasError }}" hint-placeholder-val="{{ false }}">
         <p style="font-size:12px;color:#DC2626;margin-top:8px;">{{ adminError }}</p>
       </sc-if>
-      <button onClick="{{ onAdminSubmit }}" style="width:100%;margin-top:18px;padding:11px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1D4ED8!important;">Entrar</button>
+      <button onClick="{{ onConvertAdmin }}" style="width:100%;margin-top:18px;padding:11px;background:#2563EB;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:600;font-family:'IBM Plex Sans',sans-serif;" style-hover="background:#1D4ED8!important;">Convertir en administrador</button>
     </div>
   </div>
 </sc-if>
@@ -815,7 +834,8 @@ class Component extends DCLogic {
     authModal:false, authMode:'login', authForm:{nombre:'',email:'',password:''}, authError:'', pendingAction:null, showPwd:false,
     showNewBox:false, boxForm:{name:'',type:'caja12',image:''}, boxError:'',
     useId:null, useQty:1,
-    adminAuth:false, adminModal:false, adminForm:{user:'',pass:''}, adminError:''
+    adminAuth:false, adminModal:false, adminForm:{password:''}, adminError:'',
+    importProgress:0, importTotal:0
   };
 
   async componentDidMount() {
@@ -905,9 +925,9 @@ class Component extends DCLogic {
   doLogout(){ if(window.LabAuth) window.LabAuth.logout(); this.setState({session:null,view:'visual'}); this.toast('success','Sesión cerrada'); }
 
   // ---------- administrador ----------
-  openAdmin(){ if(this.state.adminAuth){ this.setState({view:'admin'}); } else { this.setState({adminModal:true,adminForm:{user:'',pass:''},adminError:''}); } }
-  doAdminLogin(){ const {user,pass}=this.state.adminForm; if((user||'').trim()==='admin'&&pass==='1234'){ try{localStorage.setItem('li_admin','1');}catch(e){} this.setState({adminAuth:true,adminModal:false,adminError:'',view:'admin'}); this.toast('success','Modo administrador activado'); } else { this.setState({adminError:'Usuario o contraseña incorrectos'}); } }
-  adminLogout(){ try{localStorage.removeItem('li_admin');}catch(e){} this.setState({adminAuth:false,view:'visual'}); this.toast('success','Sesión de administrador cerrada'); }
+  openAdminModal(){ this.setState({adminModal:true,adminForm:{password:''},adminError:''}); }
+  doConvertAdmin(){ const {password}=this.state.adminForm; if(!password){ this.setState({adminError:'Ingresa una contraseña'}); return; } if(password.length<4){ this.setState({adminError:'La contraseña debe tener al menos 4 caracteres'}); return; } try{localStorage.setItem('li_admin_pass',password);}catch(e){} this.setState({adminAuth:true,adminModal:false,adminError:''}); this.toast('success','Cuenta convertida a administrador'); }
+  adminLogout(){ try{localStorage.removeItem('li_admin_pass');}catch(e){} this.setState({adminAuth:false}); this.toast('success','Sesión de administrador cerrada'); }
   sadm(k){ return e=>this.setState(s=>({adminForm:{...s.adminForm,[k]:e.target.value}})); }
 
   // ---------- CRUD ----------
@@ -1163,20 +1183,27 @@ class Component extends DCLogic {
           };
         });
         
+        // Mostrar barra de progreso y bloquear pantalla
+        this.setState({importProgress:0, importTotal:norm.length});
+        
         // Insertar cada componente en Supabase
         const importedIds = [];
         if(window.SupabaseClient){
           try{
             console.log('[importJSON] subiendo a Supabase...');
-            for(const comp of norm){
-              console.log('[importJSON] enviando componente:', Object.keys(comp), comp);
+            for(let i=0; i<norm.length; i++){
+              const comp = norm[i];
+              console.log('[importJSON] enviando componente:', i+1, '/', norm.length);
               await window.SupabaseClient.create(comp);
               importedIds.push(comp.id);
+              // Actualizar progreso
+              this.setState({importProgress:i+1});
             }
             console.log('[importJSON] subidos:', importedIds.length);
           }catch(err){
             console.error('Error importando a Supabase:', err);
             this.toast('error','Error al guardar en Supabase');
+            this.setState({importProgress:0, importTotal:0});
             return;
           }
         }
@@ -1200,12 +1227,13 @@ class Component extends DCLogic {
         const boxes=(d&&Array.isArray(d.boxes))?d.boxes:(this.state.customBoxes||[]);
         this.persistBoxes(boxes);
         console.log('[importJSON] actualizando estado...');
-        this.setState({comps:allComps,customBoxes:boxes});
+        this.setState({comps:allComps,customBoxes:boxes,importProgress:0,importTotal:0});
         this.toast('success',`Importados ${importedIds.length} componentes (total en BD: ${allComps.length})`);
         console.log('[importJSON] completado!');
       }catch(e){ 
         console.error('[importJSON] error:', e);
-        this.toast('error','Archivo JSON inválido'); 
+        this.toast('error','Archivo JSON inválido');
+        this.setState({importProgress:0, importTotal:0});
       }
     };
     r.readAsText(file);
@@ -1215,8 +1243,10 @@ class Component extends DCLogic {
   saf(k){ return e=>this.setState(s=>({authForm:{...s.authForm,[k]:e.target.value}})); }
 
   renderVals(){
-    const {view,container,modal,filters,sort,form,editId,delId,toast,session,authMode,authForm,authError,boxForm,boxError,useId,useQty}=this.state;
+    const {view,container,modal,filters,sort,form,editId,delId,toast,session,authMode,authForm,authError,boxForm,boxError,useId,useQty,importProgress,importTotal}=this.state;
     const comps=this.state.comps||[];
+    const isImporting = importTotal > 0;
+    const importPct = isImporting ? Math.round(importProgress/importTotal*100) : 0;
     const CTS=this.allBoxes(), TIPOS=this.TIPOS, TC=this.TC;
 
     const ct=this.getCT(container);
@@ -1335,6 +1365,7 @@ class Component extends DCLogic {
 
     return {
       isVisual:view==='visual',isTable:view==='table',isStats:view==='stats',isManage:view==='manage',isAccount:view==='account'&&loggedIn,isAdmin:view==='admin'&&this.state.adminAuth,
+      isImporting,importProgress,importTotal,importPct,
       NAV:NAVm,ctTabs,onNewBox:()=>this.requireAuth(()=>this.openNewBox()),
       ctImage:ct?.image||'',ctName:ct?.name||'',ctCompCount:ctComps.length,
       ctHint: (isG||isC12)?'Haz clic en un cajón para ver su contenido · los cajones coloreados tienen componentes':'Esta caja no tiene compartimentos · consulta su contenido abajo',
@@ -1414,8 +1445,8 @@ class Component extends DCLogic {
       // toast
       showToast:!!toast,toastMsg:toast?.txt||'',toastBg:toast?.type==='success'?'#16A34A':'#DC2626',
       // admin
-      adminModalOpen:!!this.state.adminModal,adminUser:this.state.adminForm.user,adminPass:this.state.adminForm.pass,adminError:this.state.adminError,adminHasError:!!this.state.adminError,
-      onAdminUser:this.sadm('user'),onAdminPass:this.sadm('pass'),onAdminSubmit:()=>this.doAdminLogin(),onCloseAdmin:()=>this.setState({adminModal:false,adminError:''}),onAdminLogout:()=>this.adminLogout(),
+      adminModalOpen:!!this.state.adminModal,adminPassword:this.state.adminForm.password,adminError:this.state.adminError,adminHasError:!!this.state.adminError,adminAuth:this.state.adminAuth,
+      onOpenAdminModal:()=>this.openAdminModal(),onAdminPassword:this.sadm('password'),onConvertAdmin:()=>this.doConvertAdmin(),onCloseAdmin:()=>this.setState({adminModal:false,adminError:''}),onAdminLogout:()=>this.adminLogout(),
       onAdminImport:async e=>{const file=e.target.files&&e.target.files[0];e.target.value='';if(file)await this.importJSON(file);},
       changelogRows,hasChangelog:changelogRows.length>0,noChangelog:changelogRows.length===0
     };
