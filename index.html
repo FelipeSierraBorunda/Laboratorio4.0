@@ -852,12 +852,9 @@ class Component extends DCLogic {
     let adminAuth=false; try{ adminAuth = localStorage.getItem('li_admin')==='1'; }catch(e){}
     
     console.log('[componentDidMount] seteando estado con', comps.length, 'componentes');
-    this.setState({comps, customBoxes:boxes, session, adminAuth, isLoading: false}, () => {
+    this.setState({comps, customBoxes:boxes, session, adminAuth}, () => {
       console.log('[componentDidMount] estado actualizado');
-      // Forzar repaint múltiples veces para asegurar que React actualiza
-      setTimeout(() => this.forceUpdate(), 0);
-      setTimeout(() => this.forceUpdate(), 100);
-      setTimeout(() => this.forceUpdate(), 200);
+      this.forceUpdate();
     });
   }
 
@@ -918,7 +915,6 @@ class Component extends DCLogic {
     const ct=this.getCT(cid);
     if(!ct||!ct.compartments) return [];
     const comps=this.state.comps||[];
-    console.log('[cells] cid:', cid, 'ct:', ct?.name, 'comps.length:', comps.length, 'compartments:', ct.compartments);
     return Array.from({length:ct.compartments},(_,i)=>{
       const n=i+1;
       const its=comps.filter(c=>c.contenedor===cid&&c.cajon===n);
@@ -1200,10 +1196,8 @@ class Component extends DCLogic {
   saf(k){ return e=>this.setState(s=>({authForm:{...s.authForm,[k]:e.target.value}})); }
 
   renderVals(){
-    const {view,container,modal,filters,sort,form,editId,delId,toast,session,authMode,authForm,authError,boxForm,boxError,useId,useQty,isLoading}=this.state;
+    const {view,container,modal,filters,sort,form,editId,delId,toast,session,authMode,authForm,authError,boxForm,boxError,useId,useQty}=this.state;
     const comps=this.state.comps||[];
-    console.log('[renderVals] isLoading:', isLoading, 'comps.length:', comps.length, 'view:', view);
-    
     const CTS=this.allBoxes(), TIPOS=this.TIPOS, TC=this.TC;
 
     const ct=this.getCT(container);
