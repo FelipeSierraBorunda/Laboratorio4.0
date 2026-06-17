@@ -1198,10 +1198,6 @@ class Component extends DCLogic {
   renderVals(){
     const {view,container,modal,filters,sort,form,editId,delId,toast,session,authMode,authForm,authError,boxForm,boxError,useId,useQty,isLoading}=this.state;
     const comps=this.state.comps||[];
-    
-    // No renderizar hasta que los datos estén cargados
-    if(isLoading) return {isLoading: true, loadingMsg: 'Cargando componentes...'};
-    
     const CTS=this.allBoxes(), TIPOS=this.TIPOS, TC=this.TC;
 
     const ct=this.getCT(container);
