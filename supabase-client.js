@@ -46,7 +46,11 @@ if (!window.SupabaseClient) {
         headers: { ...baseHeaders, Prefer: 'return=representation' },
         body: JSON.stringify(row)
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        const errData = await res.json();
+        console.error(`[Supabase] INSERT ${table} error:`, errData);
+        throw new Error(`HTTP ${res.status}: ${JSON.stringify(errData)}`);
+      }
       const data = await res.json();
       return Array.isArray(data) ? data[0] : data;
     },
