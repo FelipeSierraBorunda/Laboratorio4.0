@@ -823,7 +823,6 @@ class Component extends DCLogic {
     if (window.LabAuth && window.LabAuth.init) {
       try { 
         await window.LabAuth.init();
-        // Después de init, restaurar la sesión si estaba guardada
         const session = window.LabAuth.getSession();
         console.log('[componentDidMount] sesión restaurada:', session);
       } catch (e) { 
@@ -839,6 +838,7 @@ class Component extends DCLogic {
       try {
         comps = await window.SupabaseClient.getAll();
         if (!Array.isArray(comps)) comps = [];
+        console.log('[componentDidMount] componentes cargados:', comps.length);
       } catch (e) {
         console.error('Error cargando de Supabase:', e);
         comps = [];
@@ -850,7 +850,12 @@ class Component extends DCLogic {
 
     const session = (window.LabAuth && window.LabAuth.getSession && window.LabAuth.getSession()) || null;
     let adminAuth=false; try{ adminAuth = localStorage.getItem('li_admin')==='1'; }catch(e){}
-    this.setState({comps, customBoxes:boxes, session, adminAuth});
+    
+    console.log('[componentDidMount] seteando estado con', comps.length, 'componentes');
+    this.setState({comps, customBoxes:boxes, session, adminAuth}, () => {
+      console.log('[componentDidMount] estado actualizado, forzando repaint');
+      this.forceUpdate();
+    });
   }
 
   allBoxes(){ return [...this.CONTAINERS, ...((this.state.customBoxes)||[])]; }
