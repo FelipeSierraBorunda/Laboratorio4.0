@@ -1199,6 +1199,8 @@ class Component extends DCLogic {
   renderVals(){
     const {view,container,modal,filters,sort,form,editId,delId,toast,session,authMode,authForm,authError,boxForm,boxError,useId,useQty,isLoading}=this.state;
     const comps=this.state.comps||[];
+    console.log('[renderVals] isLoading:', isLoading, 'comps.length:', comps.length, 'view:', view);
+    
     const CTS=this.allBoxes(), TIPOS=this.TIPOS, TC=this.TC;
 
     const ct=this.getCT(container);
